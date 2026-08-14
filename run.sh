@@ -32,20 +32,42 @@ package_version=$(echo $deb_version | sed 's/\(.*\)-.*/\1/')
 last_tested_commit=$(echo $package_version | sed 's/.*+//')
 package_full="${package_name}-${package_version}"
 package_full_ll="${package_name}_${package_version}"
+orig_tar="${builddir}/${package_full_ll}.orig.tar.gz"
 echo "Building " $package_name " version " $deb_version
 
+# Discard an interrupted source archive rather than treating it as a valid
+# cache entry on the next build.
+if [ -f "$orig_tar" ] && ! tar -tzf "$orig_tar" >/dev/null 2>&1; then
+    rm -f "$orig_tar"
+fi
+
 # Generate original source tarball if none found
-if [ ! -f "${builddir}/${package_full_ll}.orig.tar.gz" ]; then
+if [ ! -f "$orig_tar" ]; then
     mkdir -p "${sourcedir}"
-    if [ ! -d "${sourcedir}/${package_name}" ]; then
-        git clone ${git_clone_args} "${git_repo}" "${sourcedir}/${package_name}"
+    source_repo="${sourcedir}/${package_name}"
+    if [ ! -d "${source_repo}/.git" ]; then
+        mkdir -p "${source_repo}"
+        git -C "${source_repo}" init
+        git -C "${source_repo}" remote add origin "${git_repo}"
     fi
-    git -C "${sourcedir}/${package_name}" remote update
-    git -C "${sourcedir}/${package_name}" checkout "${last_tested_commit}"
-    tar -czf "${builddir}/${package_full_ll}.orig.tar.gz" \
+    checkout_revision="${last_tested_commit}"
+    if ! git -C "${source_repo}" cat-file -e "${last_tested_commit}^{commit}" 2>/dev/null; then
+        # Fetch only the revision used by the package. Some servers reject a
+        # direct fetch of an abbreviated commit, so retain a full-fetch fallback.
+        if git -C "${source_repo}" fetch --depth 1 origin "${last_tested_commit}"; then
+            checkout_revision=FETCH_HEAD
+        else
+            git -C "${source_repo}" fetch origin
+        fi
+    fi
+    git -C "${source_repo}" checkout --detach "${checkout_revision}"
+    git -C "${source_repo}" submodule update --init --recursive
+    orig_tar_tmp="${orig_tar}.tmp.$$"
+    tar -czf "$orig_tar_tmp" \
       --exclude-vcs \
-      --absolute-names "${sourcedir}/${package_name}" \
-      --transform "s,${sourcedir}/${package_name},${package_full},"
+      --absolute-names "${source_repo}" \
+      --transform "s,${source_repo},${package_full},"
+    mv "$orig_tar_tmp" "$orig_tar"
 fi
 
 # Generate source package if none found
@@ -66,24 +88,34 @@ fi
 # Generate binary package for this arch if not found
 build_arch=$(dpkg --print-architecture)
 if [ ! -f "${builddir}/${package_name}_${deb_version}_${build_arch}.buildinfo" ]; then
-    run_prep || true
+    if declare -F run_prep >/dev/null; then
+        run_prep
+    fi
 
     # Extract source package
     if [ ! -d "${builddir}/${package_name}_${deb_version}" ]; then
         dpkg-source -x "${builddir}/${package_name}_${deb_version}.dsc" "${builddir}/${package_name}_${deb_version}"
     fi
 
-    # Install build dependencies
-    (cd "${builddir}/${package_name}_${deb_version}" && mk-build-deps -ir -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends")
+    # Install build dependencies. Run mk-build-deps outside the unpacked source
+    # tree so older releases do not leave generated build-dependency artifacts
+    # that dpkg-source mistakes for upstream changes.
+    (cd "${builddir}" && mk-build-deps -ir -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends" \
+      "${package_name}_${deb_version}/debian/control")
 
     # Build debian package.
     # HACK: There is an issue with building source package for Linux Kernel. So only build binary packages for Linux.
+    build_status=0
     if [[ "${package_name}" == "ti-linux-kernel"* ]]; then
-        (cd "${builddir}/${package_name}_${deb_version}" && debuild --no-lintian --no-sign -b || true)
+        (cd "${builddir}/${package_name}_${deb_version}" && debuild --no-lintian --no-sign -b) || build_status=$?
     else
-        (cd "${builddir}/${package_name}_${deb_version}" && debuild --no-lintian --no-sign -sa || true)
+        (cd "${builddir}/${package_name}_${deb_version}" && debuild --no-lintian --no-sign -sa) || build_status=$?
     fi
 
     # Cleanup intermediate build directory
     rm -r "${builddir}/${package_name}_${deb_version}"
+
+    if [ "$build_status" -ne 0 ]; then
+        exit "$build_status"
+    fi
 fi

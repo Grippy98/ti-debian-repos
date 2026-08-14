@@ -1,0 +1,11 @@
+cc33conf (1.7.0.120+git20241031+34e2cf44-1~noble1) noble; urgency=low
+
+  * Add noble suite support.
+
+ -- Andrei Aldea <andrei@ti.com>  Fri, 14 Aug 2026 15:03:44 -0500
+
+cc33conf (1.7.0.120+git20241031+34e2cf44-1) UNRELEASED; urgency=low
+
+  * Initial release.
+
+ -- Suhaas Joshi <s-joshi@ti.com>  Thu, 31 Oct 2024 08:12:53 +0000

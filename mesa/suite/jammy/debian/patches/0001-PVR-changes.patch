@@ -1,0 +1,42 @@
+From: Andrew Davis <afd@ti.com>
+Date: Sun, 3 Mar 2024 11:32:16 +0000
+Subject: [PATCH] PVR Changes
+
+Signed-off-by: Sai Sree Kartheek Adivi <s-adivi@ti.com>
+---
+ src/gallium/targets/dri/meson.build | 7 ++++++-
+ src/gallium/targets/dri/target.c    | 3 +++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/src/gallium/targets/dri/meson.build b/src/gallium/targets/dri/meson.build
+index f1086edadb2..00f68e99a75 100644
+--- a/src/gallium/targets/dri/meson.build
++++ b/src/gallium/targets/dri/meson.build
+@@ -117,7 +117,12 @@ foreach d : [[with_gallium_kmsro, [
+              [with_gallium_zink, 'zink_dri.so'],
+              [with_gallium_d3d12, 'd3d12_dri.so'],
+              [with_gallium_asahi, 'asahi_dri.so'],
+-             [with_gallium_pvr, 'pvr_dri.so'],
++             [with_gallium_pvr, [
++               'pvr_dri.so',
++               'tilcdc_dri.so',
++               'omapdrm_dri.so',
++               'tidss_dri.so',
++             ]],
+              [with_gallium_pvr_alias, gallium_pvr_alias + '_dri.so'],
+              [with_gallium_sgx, ['sgx_dri.so', 'pvr_dri.so']],
+              [with_gallium_sgx_alias, gallium_sgx_alias + '_dri.so']]
+diff --git a/src/gallium/targets/dri/target.c b/src/gallium/targets/dri/target.c
+index e83057549c1..6752fe2be75 100644
+--- a/src/gallium/targets/dri/target.c
++++ b/src/gallium/targets/dri/target.c
+@@ -167,6 +167,9 @@ DEFINE_LOADER_DRM_ENTRYPOINT(d3d12);
+ 
+ #if defined(GALLIUM_PVR)
+ DEFINE_LOADER_PVR_ENTRYPOINT(pvr);
++DEFINE_LOADER_PVR_ENTRYPOINT(tilcdc);
++DEFINE_LOADER_PVR_ENTRYPOINT(omapdrm);
++DEFINE_LOADER_PVR_ENTRYPOINT(tidss);
+ #endif
+ 
+ #if defined(GALLIUM_PVR_ALIAS)

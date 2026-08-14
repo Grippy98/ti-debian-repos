@@ -1,0 +1,11 @@
+ti-rpmsg-char (0.6.6+git20240226+55a6f40-1~noble1) noble; urgency=low
+
+  * Add noble suite support.
+
+ -- Andrei Aldea <andrei@ti.com>  Fri, 14 Aug 2026 15:03:44 -0500
+
+ti-rpmsg-char (0.6.6+git20240226+55a6f40-1) trixie; urgency=low
+
+  * Initial release.
+
+ -- Sai Sree Kartheek Adivi <s-adivi@ti.com>  Sun, 26 May 2024 00:52:02 +0000

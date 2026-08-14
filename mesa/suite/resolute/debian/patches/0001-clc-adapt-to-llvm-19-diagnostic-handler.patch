@@ -1,0 +1,34 @@
+From: Kai Wasserbäch <kai@dev.carbon-project.org>
+Date: Tue, 2 Apr 2024 10:49:54 +0200
+Subject: clc: adapt to new LLVM 19 DiagnosticHandlerTy
+Origin: upstream, commit:1c3cce2fff8de3f81eefa82db42650a63e3a4285
+Bug: https://gitlab.freedesktop.org/mesa/mesa/-/issues/10928
+Last-Update: 2026-08-14
+
+LLVM 19 changed DiagnosticHandlerTy to accept a DiagnosticInfo pointer.
+Adapt the callback while preserving compatibility with older LLVM releases.
+
+--- a/src/compiler/clc/clc_helpers.cpp
++++ b/src/compiler/clc/clc_helpers.cpp
+@@ -91,13 +91,21 @@ static void
+ clc_dump_llvm(const llvm::Module *mod, FILE *f);
+ 
+ static void
++#if LLVM_VERSION_MAJOR >= 19
++llvm_log_handler(const ::llvm::DiagnosticInfo *di, void *data) {
++#else
+ llvm_log_handler(const ::llvm::DiagnosticInfo &di, void *data) {
++#endif
+    const clc_logger *logger = static_cast<clc_logger *>(data);
+ 
+    std::string log;
+    raw_string_ostream os { log };
+    ::llvm::DiagnosticPrinterRawOStream printer { os };
++#if LLVM_VERSION_MAJOR >= 19
++   di->print(printer);
++#else
+    di.print(printer);
++#endif
+ 
+    clc_error(logger, "%s", log.c_str());
+ }

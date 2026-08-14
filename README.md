@@ -1,7 +1,7 @@
 # Debian-Repos
 
-Debian-Repos is a set of scripts to build TI's Debian packages with a single
-command.
+Debian-Repos is a set of scripts to build TI's Debian and Ubuntu packages with
+a single command.
 
 The generation of a Debian package (binary and source) involves many steps, such
 as obtaining the tar of the source code, generating template files, modifying
@@ -36,16 +36,36 @@ To build a package, the syntax is:
 ./run.sh <package-name>
 ```
 
-> [!NOTE]  
-> The default suite is `trixie`. To build for `bookworm`, set `DEB_SUITE` to 
-> `bookworm` in your environment
+> [!NOTE]
+> The default suite is `trixie`. Set `DEB_SUITE` to build another supported
+> suite.
 >
 > ```sh
 > DEB_SUITE=bookworm ./run.sh <package-name>
+> DEB_SUITE=trixie ./run.sh <package-name>
+> DEB_SUITE=jammy ./run.sh <package-name>
+> DEB_SUITE=noble ./run.sh <package-name>
+> DEB_SUITE=resolute ./run.sh <package-name>
 > ```
 
+The repository contains packaging for these Debian and Ubuntu suites:
+
+| Distribution | Suite | Release |
+| --- | --- | --- |
+| Debian | `bookworm` | Debian 12 |
+| Debian | `trixie` (default) | Debian 13 |
+| Ubuntu | `jammy` | Ubuntu 22.04 LTS |
+| Ubuntu | `noble` | Ubuntu 24.04 LTS |
+| Ubuntu | `resolute` | Ubuntu 26.04 LTS |
+
+Suite availability is package-specific. Check for
+`<package-name>/suite/<suite>/debian/` before building; all packages have
+`trixie`, `jammy`, `noble`, and `resolute` packaging, while some older packages
+do not have a `bookworm` directory.
+
 This command carries out all necessary steps to build the package. The
-package and all related files are then stored in `build/<package-name>`.
+package and all related files are then stored in
+`build/<suite>/<package-name>`.
 Note that certain packages may require root privileges.
 
 For example: to build `ti-linux-kernel`, the command is:
@@ -54,4 +74,10 @@ For example: to build `ti-linux-kernel`, the command is:
 ./run.sh ti-linux-kernel
 ```
 
-The output is then found in `build/ti-linux-kernel/`.
+The output is then found in `build/trixie/ti-linux-kernel/`.
+
+Packaging metadata can be checked before building with:
+
+```sh
+./scripts/validate-packaging.sh jammy noble resolute
+```

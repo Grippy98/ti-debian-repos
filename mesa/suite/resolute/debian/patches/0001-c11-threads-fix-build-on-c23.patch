@@ -1,0 +1,40 @@
+From: Dave Airlie <airlied@redhat.com>
+Date: Fri, 7 Nov 2025 13:14:56 +1000
+Subject: c11/threads: fix build on c23
+Origin: upstream, commit:179e744f7577d98df7c79d7324c22acfb32a0154
+Bug: https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/38298
+Last-Update: 2026-08-14
+
+C23/glibc is now including once_flag in stdlib.h. Avoid defining Mesa's
+fallback once_flag and call_once when libc already provides them.
+
+--- a/src/c11/impl/threads_posix.c
++++ b/src/c11/impl/threads_posix.c
+@@ -46,12 +46,13 @@ impl_thrd_routine(void *p)
+ 
+ /*--------------- 7.25.2 Initialization functions ---------------*/
+ // 7.25.2.1
++#ifndef __once_flag_defined
+ void
+ call_once(once_flag *flag, void (*func)(void))
+ {
+     pthread_once(flag, func);
+ }
+-
++#endif
+ 
+ /*------------- 7.25.3 Condition variable functions -------------*/
+ // 7.25.3.1
+--- a/src/c11/threads.h
++++ b/src/c11/threads.h
+@@ -118,8 +118,10 @@ typedef pthread_cond_t  cnd_t;
+ typedef pthread_t       thrd_t;
+ typedef pthread_key_t   tss_t;
+ typedef pthread_mutex_t mtx_t;
++#ifndef __once_flag_defined
+ typedef pthread_once_t  once_flag;
+ #  define ONCE_FLAG_INIT PTHREAD_ONCE_INIT
++#endif
+ #  ifdef PTHREAD_DESTRUCTOR_ITERATIONS
+ #    define TSS_DTOR_ITERATIONS PTHREAD_DESTRUCTOR_ITERATIONS
+ #  else
