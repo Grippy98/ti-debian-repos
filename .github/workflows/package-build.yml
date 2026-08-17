@@ -1,0 +1,275 @@
+name: Build downstream Debian packages
+
+on:
+  pull_request:
+    paths:
+      - "*/suite/**"
+      - "*/version.sh"
+      - "run.sh"
+      - "scripts/validate-packaging.sh"
+      - "scripts/ci-matrix.sh"
+      - "scripts/ci-generic-packages.txt"
+      - "scripts/collect-build-artifacts.sh"
+      - ".github/workflows/package-build.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "*/suite/**"
+      - "*/version.sh"
+      - "run.sh"
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: "Comma-separated package names, or all"
+        required: true
+        default: "cc33conf"
+        type: string
+      suites:
+        description: "Comma-separated Debian and Ubuntu suites"
+        required: true
+        default: "bookworm,trixie,jammy,noble,resolute"
+        type: string
+      create_debug_release:
+        description: "Create a draft prerelease in this repository"
+        required: true
+        default: true
+        type: boolean
+
+# A future ti-debpkgs publisher must be a separate workflow_dispatch-only job.
+# It will need a protected environment, an APT signing key, and credentials
+# scoped to the destination repository. Pull-request jobs must never receive
+# those credentials.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  prepare:
+    name: Prepare changed-package matrix
+    runs-on: ubuntu-latest
+    outputs:
+      count: ${{ steps.matrix.outputs.count }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      packages: ${{ steps.matrix.outputs.packages }}
+    steps:
+      - name: Check out packaging repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Select packages and suites
+        id: matrix
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUSH_BASE: ${{ github.event.before }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          REQUESTED_PACKAGES: ${{ inputs.packages }}
+          REQUESTED_SUITES: ${{ inputs.suites }}
+        run: |
+          set -euo pipefail
+
+          case "$EVENT_NAME" in
+            workflow_dispatch)
+              base=$GITHUB_SHA
+              ;;
+            pull_request)
+              base=$PR_BASE
+              ;;
+            push)
+              base=$PUSH_BASE
+              if [[ "$base" =~ ^0+$ ]] ||
+                 ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+                base=$(git rev-list --max-parents=0 HEAD)
+              fi
+              ;;
+            *)
+              echo "Unsupported event: $EVENT_NAME" >&2
+              exit 2
+              ;;
+          esac
+
+          matrix=$(
+            CI_PACKAGES="$REQUESTED_PACKAGES" \
+            CI_SUITES="${REQUESTED_SUITES:-bookworm,trixie,jammy,noble,resolute}" \
+            ./scripts/ci-matrix.sh "$base" "$GITHUB_SHA"
+          )
+          count=$(jq '.include | length' <<<"$matrix")
+          packages=$(jq -r '[.include[].package] | unique | join(", ")' <<<"$matrix")
+
+          {
+            echo "matrix=$matrix"
+            echo "count=$count"
+            echo "packages=$packages"
+          } >>"$GITHUB_OUTPUT"
+
+          {
+            echo "### Package build matrix"
+            echo
+            if [ "$count" -eq 0 ]; then
+              echo "No package changes detected."
+            else
+              jq -r '.include[] | "- `\(.package)` for `\(.targets)` (`\(.architecture)`, built with `\(.suite)`)"' <<<"$matrix"
+            fi
+          } >>"$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: ${{ matrix.package }} / ${{ matrix.targets }} / ${{ matrix.architecture }}
+    needs: prepare
+    if: needs.prepare.outputs.count != '0'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - name: Install packaging tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            ca-certificates \
+            devscripts \
+            dpkg-dev \
+            equivs \
+            git \
+            gzip \
+            make \
+            tar \
+            wget \
+            xz-utils
+
+      - name: Check out packaging repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Trust the mounted workspace
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Verify native architecture
+        run: test "$(dpkg --print-architecture)" = arm64
+
+      - name: Validate packaging metadata
+        shell: bash
+        env:
+          BUILD_SUITE: ${{ matrix.suite }}
+          TARGET_SUITES: ${{ matrix.targets }}
+        run: |
+          validation_suites=()
+          while IFS= read -r suite; do
+            validation_suites+=("$suite")
+          done < <(
+            printf '%s\n' "$BUILD_SUITE,$TARGET_SUITES" |
+              tr ',' '\n' |
+              sort -u
+          )
+          ./scripts/validate-packaging.sh "${validation_suites[@]}"
+
+      - name: Build package
+        env:
+          DEB_SUITE: ${{ matrix.suite }}
+        run: ./run.sh "${{ matrix.package }}"
+
+      - name: Collect release files
+        env:
+          ARTIFACT: ${{ matrix.artifact }}
+          ARCHITECTURE: ${{ matrix.architecture }}
+          BUILD_SUITE: ${{ matrix.suite }}
+          PACKAGE: ${{ matrix.package }}
+          TARGET_SUITES: ${{ matrix.targets }}
+        run: |
+          ./scripts/collect-build-artifacts.sh \
+            "$PACKAGE" \
+            "$BUILD_SUITE" \
+            "dist/$ARTIFACT" \
+            "$TARGET_SUITES" \
+            "$ARCHITECTURE"
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+  debug-release:
+    name: Create downstream draft release
+    needs:
+      - prepare
+      - build
+    if: >-
+      ${{ success() && needs.prepare.outputs.count != '0' &&
+          (github.event_name == 'push' ||
+           (github.event_name == 'workflow_dispatch' && inputs.create_debug_release)) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download package artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: deb-*
+          path: release-input
+
+      - name: Bundle package artifacts
+        env:
+          BUILD_MATRIX: ${{ needs.prepare.outputs.matrix }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          shopt -s nullglob
+          artifact_directories=(release-input/deb-*)
+          if [ "${#artifact_directories[@]}" -eq 0 ]; then
+            echo "No downloaded package artifacts found" >&2
+            exit 1
+          fi
+
+          for directory in "${artifact_directories[@]}"; do
+            name=${directory##*/}
+            tar -czf "release-assets/$name.tar.gz" -C "$directory" .
+          done
+          (cd release-assets && sha256sum ./*.tar.gz >SHA256SUMS)
+
+          {
+            echo "# Downstream debug package build"
+            echo
+            echo "This is a draft prerelease produced from commit \`$GITHUB_SHA\`."
+            echo "It is intended for downstream testing and has not been imported into \`ti-debpkgs\`."
+            echo
+            echo "## Packages"
+            echo
+            jq -r '.include[] | "- `\(.package)` / targets `\(.targets)` / `\(.architecture)` (built with `\(.suite)`)"' <<<"$BUILD_MATRIX"
+          } >release-notes.md
+
+      - name: Create draft prerelease
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          short_sha=${GITHUB_SHA:0:7}
+          tag="debug-packages-${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}-$short_sha"
+          assets=(release-assets/*)
+          release_url=$(
+            gh release create "$tag" "${assets[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Debug package build $short_sha" \
+              --notes-file release-notes.md \
+              --draft \
+              --prerelease
+          )
+          echo "url=$release_url" >>"$GITHUB_OUTPUT"
+          echo "Draft release: $release_url" >>"$GITHUB_STEP_SUMMARY"

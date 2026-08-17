@@ -9,7 +9,7 @@ function setup_cgt_pru() {
         exit 1
     fi
 
-    cd ${builddir}
+    cd "${builddir}" || return
 
     if [ ! -f ti_cgt_pru_2.3.3_armlinuxa8hf_busybox_installer.sh ] ; then
         wget "https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-FaNNGkDH7s/2.3.3/ti_cgt_pru_2.3.3_armlinuxa8hf_busybox_installer.sh"
@@ -25,7 +25,6 @@ function setup_cgt_pru() {
         ln -s /usr/bin/ /usr/share/ti/cgt-pru/bin
     fi
 
-    cd "${builddir}/${package_full}"
 }
     
 

@@ -79,5 +79,42 @@ The output is then found in `build/trixie/ti-linux-kernel/`.
 Packaging metadata can be checked before building with:
 
 ```sh
-./scripts/validate-packaging.sh jammy noble resolute
+./scripts/validate-packaging.sh bookworm trixie jammy noble resolute
 ```
+
+## Automated package builds
+
+GitHub Actions builds changed packages for Debian Bookworm and Trixie and for
+Ubuntu Jammy, Noble, and Resolute on native ARM64 runners. A package change
+builds every one of those suites that the package provides, so a suite-specific
+packaging change cannot silently break another supported variant. Packages
+without a Bookworm suite begin with Trixie.
+
+Suite-neutral `Architecture: all` or fixed-`arm64` sources are built once per
+distinct base version from their unsuffixed Debian packaging, and the resulting
+package is targeted at every compatible requested suite. Ubuntu changelogs
+retain their normal `~jammy1`, `~noble1`, and `~resolute1` source-version
+suffixes. The audited generic sources are `cc33xx-fw`,
+`cc33xx-target-scripts`, `cryptodev-linux`, `pru-pssp`,
+`ti-img-rogue-driver`, and `ti-linux-firmware`; `cryptodev-linux`,
+`ti-img-rogue-driver`, and `ti-linux-firmware` retain separate Bookworm builds
+when Bookworm carries an older version. Their classification is recorded in
+`scripts/ci-generic-packages.txt` and enforced by the packaging validator. A
+complete build therefore uses 56 jobs instead of 75 without reducing suite
+coverage.
+
+- Pull requests build and retain package artifacts for 14 days.
+- Pushes to `master` that change a package create a draft debug prerelease in
+  this repository after every selected build passes.
+- The `Build downstream Debian packages` workflow can also be run manually for
+  a comma-separated package list (or `all`) and suite list.
+
+Each release asset is a package/target-suite bundle containing the generated
+`.deb`, `.ddeb`, `.udeb`, `.changes`, and `.buildinfo` files, plus a manifest
+and SHA-256 checksums. Generic bundles can target multiple suites.
+
+> [!IMPORTANT]
+> Publishing into `TexasInstruments/ti-debpkgs` is intentionally not automated.
+> A future publisher should be a separate, manually triggered workflow using a
+> protected environment for the APT signing key and destination-repository
+> credentials. Pull-request builds must never have access to those secrets.

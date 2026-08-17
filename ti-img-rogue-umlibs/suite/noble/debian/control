@@ -6,7 +6,9 @@ Build-Depends:
  debhelper-compat (= 12),
  ca-certificates,
  libdrm-dev,
+ libwayland-dev,
  libx11-xcb-dev,
+ ripgrep,
 Standards-Version: 4.5.0
 Rules-Requires-Root: no
 Vcs-Git: https://git.ti.com/git/graphics/ti-img-rogue-umlibs.git

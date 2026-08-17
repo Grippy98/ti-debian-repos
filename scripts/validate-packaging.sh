@@ -3,9 +3,10 @@
 set -euo pipefail
 
 topdir=$(git rev-parse --show-toplevel)
+generic_packages="$topdir/scripts/ci-generic-packages.txt"
 
 if [ "$#" -eq 0 ]; then
-    set -- jammy noble resolute
+    set -- bookworm trixie jammy noble resolute
 fi
 
 for command in dpkg-checkbuilddeps dpkg-parsechangelog make; do
@@ -20,6 +21,14 @@ failures=0
 report_failure() {
     echo "ERROR: $*" >&2
     failures=$((failures + 1))
+}
+
+is_generic_package() {
+    grep -Ev '^[[:space:]]*(#|$)' "$generic_packages" | grep -Fqx "$1"
+}
+
+suite_neutral_version() {
+    sed -E 's/~(jammy|noble|resolute)[0-9]+$//' <<<"$1"
 }
 
 for suite in "$@"; do
@@ -51,7 +60,7 @@ for suite in "$@"; do
 
     for control in "${controls[@]}"; do
         debian_dir=${control%/control}
-        package_root=${control%/suite/$suite/debian/control}
+        package_root=${control%/suite/"$suite"/debian/control}
         package=${package_root##*/}
         changelog="$debian_dir/changelog"
         rules="$debian_dir/rules"
@@ -67,20 +76,54 @@ for suite in "$@"; do
 
         distribution=$(dpkg-parsechangelog -l"$changelog" --show-field Distribution)
         version=$(dpkg-parsechangelog -l"$changelog" --show-field Version)
-        if [ "$distribution" != "$suite" ]; then
-            report_failure "$package/$suite changelog targets $distribution"
-        fi
-        if [ -n "$expected_suffix" ] && [[ "$version" != *"$expected_suffix"* ]]; then
-            report_failure "$package/$suite version $version lacks $expected_suffix"
+        generic=0
+        if is_generic_package "$package"; then
+            generic=1
         fi
 
-        for other_changelog in "$package_root"/suite/*/debian/changelog; do
-            [ "$other_changelog" = "$changelog" ] && continue
-            other_version=$(dpkg-parsechangelog -l"$other_changelog" --show-field Version)
-            if [ "$version" = "$other_version" ]; then
-                report_failure "$package reuses version $version in multiple suites"
+        if [ -n "$expected_suffix" ]; then
+            if [ "$distribution" != "$suite" ]; then
+                report_failure "$package/$suite changelog targets $distribution"
             fi
-        done
+            if [[ "$version" != *"$expected_suffix"* ]]; then
+                report_failure "$package/$suite version $version lacks $expected_suffix"
+            fi
+
+            if [ "$generic" -eq 0 ]; then
+                # Compiled Ubuntu variants need distinct suite-qualified
+                # versions. Debian suite trees preserve upstream changelog
+                # targets and may intentionally reuse versions.
+                for other_changelog in "$package_root"/suite/*/debian/changelog; do
+                    [ "$other_changelog" = "$changelog" ] && continue
+                    other_version=$(dpkg-parsechangelog -l"$other_changelog" --show-field Version)
+                    if [ "$version" = "$other_version" ]; then
+                        report_failure "$package reuses version $version in multiple suites"
+                    fi
+                done
+            fi
+        fi
+
+        if [ "$generic" -eq 1 ]; then
+            architectures=$(awk '$1 == "Architecture:" {print $2}' "$control" | sort -u | paste -sd, -)
+            case "$architectures" in
+                all|arm64) ;;
+                *) report_failure "$package/$suite is marked generic but has unsafe architectures: $architectures" ;;
+            esac
+
+            # A shared binary is safe only when every suite carrying the same
+            # base version has byte-identical packaging apart from its changelog.
+            version_group=$(suite_neutral_version "$version")
+            for other_changelog in "$package_root"/suite/*/debian/changelog; do
+                [ "$other_changelog" = "$changelog" ] && continue
+                other_version=$(dpkg-parsechangelog -l"$other_changelog" --show-field Version)
+                other_version_group=$(suite_neutral_version "$other_version")
+                [ "$version_group" = "$other_version_group" ] || continue
+                other_debian_dir=${other_changelog%/changelog}
+                if ! diff -qr --exclude=changelog "$debian_dir" "$other_debian_dir" >/dev/null; then
+                    report_failure "$package base version $version_group has suite-specific packaging"
+                fi
+            done
+        fi
 
         control_error=$(dpkg-checkbuilddeps "$control" 2>&1) || true
         control_error_lower=${control_error,,}

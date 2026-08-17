@@ -2,6 +2,23 @@
 
 set -e
 
+retry_git_fetch() {
+    local repository=$1
+    shift
+    local delay
+
+    for delay in 0 5 15; do
+        if [ "$delay" -ne 0 ]; then
+            echo "Git fetch failed; retrying in $delay seconds" >&2
+            sleep "$delay"
+        fi
+        if git -C "$repository" fetch "$@"; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 if [ "$#" -eq 0 ]; then
     echo "run.sh: missing operands"
     echo "Requires source package name as argument"
@@ -54,10 +71,10 @@ if [ ! -f "$orig_tar" ]; then
     if ! git -C "${source_repo}" cat-file -e "${last_tested_commit}^{commit}" 2>/dev/null; then
         # Fetch only the revision used by the package. Some servers reject a
         # direct fetch of an abbreviated commit, so retain a full-fetch fallback.
-        if git -C "${source_repo}" fetch --depth 1 origin "${last_tested_commit}"; then
+        if retry_git_fetch "${source_repo}" --depth 1 origin "${last_tested_commit}"; then
             checkout_revision=FETCH_HEAD
         else
-            git -C "${source_repo}" fetch origin
+            retry_git_fetch "${source_repo}" origin
         fi
     fi
     git -C "${source_repo}" checkout --detach "${checkout_revision}"

@@ -1,0 +1,11 @@
+# Sources whose binary packages are suite-neutral (`all` or fixed `arm64`).
+# CI builds each distinct base version once from its Debian packaging and
+# targets the result at suites carrying equivalent suite-qualified versions.
+cc33xx-fw
+cc33xx-target-scripts
+# DKMS source payload; generated dependency is only dkms.
+cryptodev-linux
+# PRU-target firmware/library payload; no host shared-library dependencies.
+pru-pssp
+ti-img-rogue-driver
+ti-linux-firmware

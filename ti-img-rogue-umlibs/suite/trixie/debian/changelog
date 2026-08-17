@@ -1,3 +1,9 @@
+ti-img-rogue-umlibs (26.1.6967606+git20260515+a59e0e6b92df-2) trixie; urgency=medium
+
+  * Add missing build dependencies for Wayland libraries and source cleanup.
+
+ -- Jonas Wood <jw@ti.com>  Mon, 17 Aug 2026 09:53:34 -0500
+
 ti-img-rogue-umlibs (26.1.6967606+git20260515+a59e0e6b92df-1) trixie; urgency=low
 
   * New upstream release.
