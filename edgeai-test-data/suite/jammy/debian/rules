@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+
+override_dh_auto_install:
+	install -d debian/edgeai-test-data
+	cp -a payload/opt debian/edgeai-test-data/
+	install -D -m 0644 payload/usr/share/ti-edgeai/test-data-files.sha256 \
+		debian/edgeai-test-data/usr/share/ti-edgeai/test-data-files.sha256

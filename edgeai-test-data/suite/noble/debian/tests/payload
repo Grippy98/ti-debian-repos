@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+test -d /opt/edgeai-test-data
+test -d /opt/oob-demo-assets
+test -s /usr/share/ti-edgeai/test-data-files.sha256

@@ -1,0 +1,19 @@
+Source: edgeai-tidl-models
+Section: misc
+Priority: optional
+Maintainer: Vijay Pothukuchi <vijayp@ti.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/TexasInstruments/edgeai-gst-apps
+Rules-Requires-Root: no
+
+Package: edgeai-tidl-models
+Architecture: all
+Depends: ${misc:Depends}
+Description: ABI-validated TI EdgeAI TIDL models for AM67A/J722S
+ RegNetX-200MF ONNX and TI MobileNetV1 TFLite image-classification models
+ compiled with TI 11_02_16_00 tools for the AM67A/J722S C7x-MMA. All 103 ONNX
+ nodes and all 34 TFLite operators are offloaded. The package records compiler
+ inputs, reference data, and output hashes for reproducibility.
+ .
+ The models are installed below /opt/model_zoo/.

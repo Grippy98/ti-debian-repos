@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	install -d debian/python3-ti-tidl-osrt/usr/lib/python3/dist-packages
+	cp -a staging/python/. \
+		debian/python3-ti-tidl-osrt/usr/lib/python3/dist-packages/
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym

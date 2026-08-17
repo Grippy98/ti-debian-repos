@@ -1,0 +1,21 @@
+Source: edgeai-tiovx-apps
+Section: misc
+Priority: optional
+Maintainer: Andrei Aldea <andrei@ti.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/TexasInstruments/edgeai-tiovx-apps
+Rules-Requires-Root: no
+
+Package: edgeai-tiovx-apps
+Architecture: arm64
+Depends: ${misc:Depends},
+ libc6,
+ libstdc++6,
+ edgeai-tiovx-kernels (>= 1.0.0-1~),
+ edgeai-apps-utils (>= 1.0.0-1~),
+ libtivision-apps11.2.0 (>= 11.02.03-3~),
+ libyaml-cpp0.8,
+ libavformat60
+Description: TI EdgeAI OpenVX applications
+ OpenVX inference applications and their source for TI EdgeAI platforms.

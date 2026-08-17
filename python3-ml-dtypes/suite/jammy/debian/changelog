@@ -1,0 +1,6 @@
+python3-ml-dtypes (0.5.4-1~jammy1) jammy; urgency=medium
+
+  * Build an ABI-native ml_dtypes for the suite Python and NumPy versions.
+  * Update the former Noble-only PSDK recipe for Python 3.9 through 3.14.
+
+ -- Andrei Aldea <andrei@ti.com>  Mon, 17 Aug 2026 11:20:35 -0500

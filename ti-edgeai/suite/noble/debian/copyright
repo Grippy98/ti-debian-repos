@@ -1,0 +1,15 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ti-edgeai
+Source: https://github.com/TexasInstruments-Sandbox/ti-edgeai-armbian-build
+
+Files: *
+Copyright: 2024-2026 Texas Instruments Incorporated
+License: BSD-3-Clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the copyright notice, conditions,
+ and disclaimer are retained. Neither the Texas Instruments name nor
+ contributor names may be used to endorse derived products without permission.
+ .
+ THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. IN NO EVENT
+ SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES,
+ OR OTHER LIABILITY ARISING FROM USE OF THIS SOFTWARE.

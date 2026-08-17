@@ -1,0 +1,6 @@
+python3-ti-tidl-osrt (11.02.16.00-1~noble1) noble; urgency=medium
+
+  * Package TI's PSDK 11.02 CPython 3.12 bindings separately from the native
+    OSRT libraries.
+
+ -- Andrei Aldea <andrei@ti.com>  Mon, 17 Aug 2026 14:47:44 -0500

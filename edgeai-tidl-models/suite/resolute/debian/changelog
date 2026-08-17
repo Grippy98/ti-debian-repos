@@ -1,0 +1,9 @@
+edgeai-tidl-models (11.02.16.00-2~resolute1) resolute; urgency=medium
+
+  * Import the AM67A/J722S models compiled with TIDL tools 11_02_16_00.
+  * Preserve the compiler provenance and validated ONNX/TFLite artifacts from
+    TI's 11.02 J722S release bundle.
+  * Mark the binary package Architecture: all because the accelerator payload
+    has no Debian userspace ABI and is identical across supported suites.
+
+ -- Andrei Aldea <andrei@ti.com>  Mon, 17 Aug 2026 11:40:49 -0500

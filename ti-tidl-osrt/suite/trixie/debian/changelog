@@ -1,0 +1,6 @@
+ti-tidl-osrt (11.02.16.00-1) trixie; urgency=medium
+
+  * Import TI's checksum-pinned PSDK 11.02 native OSRT libraries.
+  * Keep the CPython 3.12 bindings in their Noble-only binary package.
+
+ -- Vijay Pothukuchi <vijayp@ti.com>  Mon, 17 Aug 2026 14:47:44 -0500

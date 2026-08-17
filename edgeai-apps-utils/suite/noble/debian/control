@@ -1,0 +1,24 @@
+Source: edgeai-apps-utils
+Section: libs
+Priority: optional
+Maintainer: Andrei Aldea <andrei@ti.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://git.ti.com/cgit/edgeai/edgeai-apps-utils
+Rules-Requires-Root: no
+
+Package: edgeai-apps-utils
+Architecture: arm64
+Depends: ${misc:Depends},
+ libc6,
+ libtivision-apps11.2.0 (>= 11.02.03-3~)
+Description: TI EdgeAI utility library
+ ARMv8 NEON pre-processing, post-processing, drawing, scaling, and performance
+ utility functions for TI EdgeAI pipelines.
+
+Package: edgeai-apps-utils-dev
+Section: libdevel
+Architecture: arm64
+Depends: ${misc:Depends}, edgeai-apps-utils (= ${binary:Version})
+Description: TI EdgeAI utility library - development files
+ Headers and the unversioned linker name for TI EdgeAI Apps Utils.

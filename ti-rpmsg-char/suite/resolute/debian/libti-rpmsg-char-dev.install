@@ -1,4 +1,2 @@
-usr/lib/*/libti_rpmsg_char.a
-usr/include/* 
-usr/lib/*/libti_rpmsg_char.la
+usr/include/*
 usr/lib/*/libti_rpmsg_char.so

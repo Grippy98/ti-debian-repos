@@ -1,0 +1,25 @@
+From: Andrei Aldea <andrei@ti.com>
+Date: Mon, 17 Aug 2026 11:20:35 -0500
+Subject: Declare package metadata for older Setuptools
+
+Jammy's Setuptools can compile the extension but does not understand the
+dynamic version and package-selection tables in pyproject.toml. Supply the
+same values to setup() so that Python modules and metadata are installed on
+all supported suites.
+---
+ setup.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/setup.py
++++ b/setup.py
+@@ -58,6 +58,10 @@ class build_py(build_py_orig):  # pylint
+
+
+ setup(
++    name="ml_dtypes",
++    version="0.5.4",
++    packages=["ml_dtypes"],
++    package_data={"ml_dtypes": ["py.typed"]},
+     ext_modules=[
+         Extension(
+             "ml_dtypes._ml_dtypes_ext",

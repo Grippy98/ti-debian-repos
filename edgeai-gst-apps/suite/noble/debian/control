@@ -1,0 +1,37 @@
+Source: edgeai-gst-apps
+Section: misc
+Priority: optional
+Maintainer: Andrei Aldea <andrei@ti.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/TexasInstruments/edgeai-gst-apps
+Rules-Requires-Root: no
+
+Package: edgeai-gst-apps
+Architecture: arm64
+Depends: ${misc:Depends},
+ libc6,
+ libstdc++6,
+ libtivision-apps11.2.0 (>= 11.02.03-3~),
+ edgeai-dl-inferer (>= 1.0.0-1~),
+ edgeai-gst-plugins (>= 1.0.0-4~),
+ ti-tidl-osrt (>= 11.02.16.00-1~),
+ python3-ti-tidl-osrt (>= 11.02.16.00-1~),
+ libyaml-cpp0.8,
+ libgstreamer1.0-0,
+ libgstreamer-plugins-base1.0-0,
+ libglib2.0-0t64 | libglib2.0-0,
+ libncurses6,
+ libtinfo6,
+ libopencv-core406,
+ libopencv-imgproc406,
+ python3,
+ python3-numpy,
+ python3-opencv,
+ python3-yaml,
+ python3-gi,
+ gir1.2-gstreamer-1.0,
+ gir1.2-gst-plugins-base-1.0
+Description: TI EdgeAI GStreamer applications
+ C++ and Python GStreamer applications for end-to-end inference on TI EdgeAI
+ platforms.

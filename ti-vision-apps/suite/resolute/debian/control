@@ -1,0 +1,38 @@
+Source: ti-vision-apps
+Section: libs
+Priority: optional
+Maintainer: Andrei Aldea <andrei@ti.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://git.ti.com/git/processor-sdk/vision_apps.git
+Rules-Requires-Root: no
+
+Package: libtivision-apps11.2.0
+Architecture: arm64
+Depends: ${misc:Depends},
+ libc6,
+ libgcc-s1,
+ libstdc++6,
+ libegl1,
+ libgbm1,
+ libgles2,
+ libti-rpmsg-char0 (>= 0.6.10-1~)
+Description: TI OpenVX middleware library
+ TI Vision Apps OpenVX middleware for TI K3 SoCs, including host support for
+ C7x/MMA, VPAC, and DMPAC accelerators.
+
+Package: libtivision-apps-dev
+Section: libdevel
+Architecture: arm64
+Depends: ${misc:Depends}, libtivision-apps11.2.0 (= ${binary:Version})
+Description: TI OpenVX middleware library - development files
+ Headers, the unversioned linker name, and the TI host 2A wrapper static
+ library used to build against TI Vision Apps.
+
+Package: ti-vision-apps-data
+Section: misc
+Architecture: arm64
+Depends: ${misc:Depends}, libtivision-apps11.2.0 (= ${binary:Version})
+Description: TI Vision Apps runtime data and utilities
+ Sensor DCC calibration binaries and TI Vision Apps utility executables for
+ J722S and other supported TI K3 devices.

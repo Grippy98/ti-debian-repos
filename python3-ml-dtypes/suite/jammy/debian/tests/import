@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+
+python3 -c 'import ml_dtypes; assert ml_dtypes.__version__ == "0.5.4"'

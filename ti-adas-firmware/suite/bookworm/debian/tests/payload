@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+
+fwroot=/usr/lib/firmware
+info=/usr/share/ti-edgeai/firmware-build-info.txt
+
+grep -qx 'memory_profile=beagley-j722s-4gb' "$info"
+grep -qx 'shared_mem_phys_addr=0x8a0000000' "$info"
+grep -qx 'build_enable_ethfw=no' "$info"
+
+check_link() {
+    link=$1
+    target=$2
+    test "$(readlink "$fwroot/$link")" = "$target"
+    test -s "$fwroot/$target"
+}
+
+check_link j722s-main-r5f0_0-fw \
+    vision_apps_eaik/j722s/vx_app_rtos_linux_mcu2_0.out
+check_link j722s-c71_0-fw \
+    vision_apps_eaik/j722s/vx_app_rtos_linux_c7x_1.out
+check_link j722s-c71_1-fw \
+    vision_apps_eaik/j722s/vx_app_rtos_linux_c7x_2.out

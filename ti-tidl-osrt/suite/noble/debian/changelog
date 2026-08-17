@@ -1,0 +1,7 @@
+ti-tidl-osrt (11.02.16.00-1~noble1) noble; urgency=medium
+
+  * Import TI's checksum-pinned PSDK 11.02 OSRT artifacts.
+  * Separate the native runtime from TI's CPython 3.12 bindings so the C and
+    C++ libraries can also be used on newer distributions.
+
+ -- Andrei Aldea <andrei@ti.com>  Mon, 17 Aug 2026 11:40:49 -0500

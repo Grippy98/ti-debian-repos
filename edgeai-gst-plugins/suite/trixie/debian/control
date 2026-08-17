@@ -1,0 +1,27 @@
+Source: edgeai-gst-plugins
+Section: libs
+Priority: optional
+Maintainer: Andrei Aldea <andrei@ti.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/TexasInstruments/edgeai-gst-plugins
+Rules-Requires-Root: no
+
+Package: edgeai-gst-plugins
+Architecture: arm64
+Depends: ${misc:Depends},
+ libc6,
+ libstdc++6,
+ edgeai-tiovx-modules (>= 1.0.0-1~),
+ edgeai-tiovx-kernels (>= 1.0.0-1~),
+ edgeai-apps-utils (>= 1.0.0-1~),
+ libtivision-apps11.2.0 (>= 11.02.03-3~),
+ ti-tidl-osrt (>= 11.02.16.00-1~),
+ ti-tidl (>= 1.0.0-1~),
+ libgstreamer1.0-0,
+ libgstreamer-plugins-base1.0-0,
+ libglib2.0-0t64 | libglib2.0-0,
+ libyaml-cpp0.8
+Description: TI EdgeAI GStreamer plugins
+ GStreamer elements for TI OpenVX image processing and TIDL inference on TI K3
+ devices. Plugins are installed in the ARM64 multiarch directory.

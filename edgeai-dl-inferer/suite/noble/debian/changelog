@@ -1,0 +1,6 @@
+edgeai-dl-inferer (1.0.0-1~noble1) noble; urgency=medium
+
+  * Add the PSDK Analytics 11.02 package built from the pinned TI sources.
+  * Keep the package suite list aligned with its actual userspace ABI.
+
+ -- Andrei Aldea <andrei@ti.com>  Mon, 17 Aug 2026 14:47:44 -0500

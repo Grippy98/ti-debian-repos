@@ -1,3 +1,11 @@
+ti-rpmsg-char (0.6.10-1) trixie; urgency=medium
+
+  * Update to TI PSDK Analytics 11.02 commit 057b1a2.
+  * Rename the runtime binary to libti-rpmsg-char0 to match its SONAME.
+  * Retain libti-rpmsg-char as a transitional package for existing users.
+
+ -- Andrei Aldea <andrei@ti.com>  Mon, 17 Aug 2026 11:10:06 -0500
+
 ti-rpmsg-char (0.6.6+git20240226+55a6f40-1) trixie; urgency=low
 
   * Initial release.

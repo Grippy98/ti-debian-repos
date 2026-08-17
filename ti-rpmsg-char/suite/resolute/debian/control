@@ -1,29 +1,41 @@
 Source: ti-rpmsg-char
-Section: libs 
+Section: libs
 Priority: optional
 Maintainer: Jonas Wood <jw@ti.com>
 Build-Depends: debhelper-compat (= 13), dh-autoreconf
-Standards-Version: 4.5.1
+Standards-Version: 4.6.2
 Homepage: https://git.ti.com/cgit/rpmsg/ti-rpmsg-char
 Rules-Requires-Root: no
 
-Package: libti-rpmsg-char
+Package: libti-rpmsg-char0
 Section: libs
 Architecture: any
 Multi-Arch: same
 Depends: ${misc:Depends}, ${shlibs:Depends}
+Breaks: libti-rpmsg-char (<< 0.6.10~)
+Replaces: libti-rpmsg-char (<< 0.6.10~)
 Description: RPMSG-char Utility Library
  ti-rpmsg-char is a library designed to provide Linux applications an easy means
  to open and identify rpmsg character devices created by the Linux kernel
- rpmsg-char driver using the virio-rpmsg-bus transport back-end.
+ rpmsg-char driver using the virtio-rpmsg-bus transport back-end.
 
 Package: libti-rpmsg-char-dev
 Section: libdevel
 Architecture: any
-Depends: libti-rpmsg-char
+Multi-Arch: same
+Depends: ${misc:Depends}, libti-rpmsg-char0 (= ${binary:Version})
 Description: RPMSG-char Utility Library
  ti-rpmsg-char is a library designed to provide Linux applications an easy means
  to open and identify rpmsg character devices created by the Linux kernel
- rpmsg-char driver using the virio-rpmsg-bus transport back-end.
+ rpmsg-char driver using the virtio-rpmsg-bus transport back-end.
  .
  This package contains development files for libti-rpmsg-char.
+
+Package: libti-rpmsg-char
+Section: oldlibs
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends}, libti-rpmsg-char0 (= ${binary:Version})
+Description: transitional package for the TI RPMsg Character Device Library
+ This package preserves upgrades from the former unversioned runtime package.
+ It can be safely removed after libti-rpmsg-char0 is installed.

@@ -1,0 +1,15 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ml_dtypes
+Source: https://github.com/jax-ml/ml_dtypes
+
+Files: *
+Copyright: 2022-2026 The ml_dtypes Authors
+License: Apache-2.0
+ On Debian systems, the complete text of the Apache License, version 2.0,
+ is available in /usr/share/common-licenses/Apache-2.0.
+
+Files: third_party/eigen/*
+Copyright: 2008-2026 The Eigen Authors
+License: MPL-2.0
+ On Debian systems, the complete text of the Mozilla Public License,
+ version 2.0, is available in /usr/share/common-licenses/MPL-2.0.

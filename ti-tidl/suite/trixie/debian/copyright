@@ -1,0 +1,9 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: arm-tidl
+Source: https://git.ti.com/git/processor-sdk-vision/arm-tidl.git
+
+Files: *
+Copyright: 2015-2026 Texas Instruments Incorporated
+License: Expat
+ On Debian systems, the complete text of the Expat license can be found in
+ /usr/share/common-licenses/Expat.

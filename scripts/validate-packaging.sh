@@ -27,9 +27,41 @@ is_generic_package() {
     grep -Ev '^[[:space:]]*(#|$)' "$generic_packages" | grep -Fqx "$1"
 }
 
+package_supports_suite() {
+    local package_root=$1
+    local suite=$2
+    local supported_suites="$package_root/supported-suites"
+
+    # Existing packages without an explicit allowlist retain the repository's
+    # original expectation that every Ubuntu suite is provided.
+    if [ ! -f "$supported_suites" ]; then
+        return 0
+    fi
+    grep -Ev '^[[:space:]]*(#|$)' "$supported_suites" | grep -Fqx "$suite"
+}
+
 suite_neutral_version() {
     sed -E 's/~(jammy|noble|resolute)[0-9]+$//' <<<"$1"
 }
+
+for version_file in "$topdir"/*/version.sh; do
+    package_root=${version_file%/version.sh}
+    supported_suites="$package_root/supported-suites"
+    [ -f "$supported_suites" ] || continue
+
+    while IFS= read -r supported_suite; do
+        supported_suite=${supported_suite//[[:space:]]/}
+        [ -n "$supported_suite" ] || continue
+        [[ "$supported_suite" == \#* ]] && continue
+        case "$supported_suite" in
+            bookworm|trixie|jammy|noble|resolute) ;;
+            *) report_failure "${package_root##*/} declares unsupported suite $supported_suite"; continue ;;
+        esac
+        if [ ! -f "$package_root/suite/$supported_suite/debian/control" ]; then
+            report_failure "${package_root##*/} declares suite $supported_suite but has no packaging for it"
+        fi
+    done <"$supported_suites"
+done
 
 for suite in "$@"; do
     case "$suite" in
@@ -40,9 +72,10 @@ for suite in "$@"; do
     esac
 
     controls=()
-    while IFS= read -r control; do
+    for control in "$topdir"/*/suite/"$suite"/debian/control; do
+        [ -f "$control" ] || continue
         controls+=("$control")
-    done < <(find "$topdir" -path "*/suite/$suite/debian/control" -print | sort)
+    done
 
     if [ "${#controls[@]}" -eq 0 ]; then
         report_failure "no package metadata found for suite $suite"
@@ -52,7 +85,8 @@ for suite in "$@"; do
     if [ -n "$expected_suffix" ]; then
         for version_file in "$topdir"/*/version.sh; do
             package_root=${version_file%/version.sh}
-            if [ ! -f "$package_root/suite/$suite/debian/control" ]; then
+            if package_supports_suite "$package_root" "$suite" &&
+               [ ! -f "$package_root/suite/$suite/debian/control" ]; then
                 report_failure "${package_root##*/} is missing suite $suite"
             fi
         done
@@ -138,6 +172,10 @@ for suite in "$@"; do
         reference_control="$package_root/suite/trixie/debian/control"
         if [ ! -f "$reference_control" ]; then
             reference_control="$package_root/suite/bookworm/debian/control"
+        fi
+        if [ ! -f "$reference_control" ]; then
+            reference_control=$(find "$package_root/suite" \
+                -path '*/debian/control' -print | sort | head -1)
         fi
         reference_maintainer=$(sed -n 's/^Maintainer: //p' "$reference_control" | head -1)
         suite_maintainer=$(sed -n 's/^Maintainer: //p' "$control" | head -1)

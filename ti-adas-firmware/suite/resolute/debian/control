@@ -1,0 +1,24 @@
+Source: ti-adas-firmware
+Section: kernel
+Priority: optional
+Maintainer: Vijay Pothukuchi <vijayp@ti.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://git.ti.com/cgit/processor-sdk/psdk_fw
+Rules-Requires-Root: no
+
+Package: ti-edgeai-firmware-j722s-4gb
+Architecture: all
+Depends: ${misc:Depends}
+Provides: ti-adas-firmware (= ${binary:Version}), ti-edgeai-firmware-j722s (= ${binary:Version})
+Conflicts: ti-adas-firmware, ti-edgeai-firmware-j722s
+Replaces: ti-adas-firmware, ti-edgeai-firmware-j722s
+Description: TI EdgeAI RTOS firmware for 4 GiB J722S systems
+ RTOS firmware images rebuilt from pinned PSDK 11.02 sources for the R5F MCU
+ and both C7x/MMA DSP cores on the 4 GiB AM67A/J722S BeagleY-AI. The shared
+ DMA heap, firmware MMU/RAT settings, and Linux reserved-memory layout use one
+ matched BeagleY-specific ABI.
+ .
+ Firmware is installed below /usr/lib/firmware/vision_apps_eaik, with links
+ under the canonical J722S remoteproc names. The EVM Ethernet-firmware payload
+ is deliberately excluded because Ethernet is owned by Linux on BeagleY-AI.

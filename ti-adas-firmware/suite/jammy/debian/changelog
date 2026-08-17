@@ -1,0 +1,8 @@
+ti-adas-firmware (1.0.0+psdk11.2.1.beagley4gb2-1~jammy1) jammy; urgency=medium
+
+  * Import the J722S RTOS firmware rebuilt for BeagleY-AI's 4 GiB memory map.
+  * Preserve the pinned PSDK source revisions and firmware build evidence.
+  * Mark the firmware package Architecture: all and share its identical
+    device payload across the supported Debian and Ubuntu suites.
+
+ -- Andrei Aldea <andrei@ti.com>  Mon, 17 Aug 2026 11:40:49 -0500

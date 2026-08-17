@@ -1,0 +1,6 @@
+ti-tidl (1.0.0-1~resolute1) resolute; urgency=medium
+
+  * Add the PSDK Analytics 11.02 package built from the pinned TI sources.
+  * Carry the validated J722S 4 GiB userspace ABI.
+
+ -- Andrei Aldea <andrei@ti.com>  Mon, 17 Aug 2026 14:47:44 -0500

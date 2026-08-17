@@ -5,11 +5,13 @@ on:
     paths:
       - "*/suite/**"
       - "*/version.sh"
+      - "*/supported-suites"
       - "run.sh"
       - "scripts/validate-packaging.sh"
       - "scripts/ci-matrix.sh"
       - "scripts/ci-generic-packages.txt"
       - "scripts/collect-build-artifacts.sh"
+      - "scripts/edgeai-release-source.sh"
       - ".github/workflows/package-build.yml"
   push:
     branches:
@@ -17,7 +19,14 @@ on:
     paths:
       - "*/suite/**"
       - "*/version.sh"
+      - "*/supported-suites"
       - "run.sh"
+      - "scripts/validate-packaging.sh"
+      - "scripts/ci-matrix.sh"
+      - "scripts/ci-generic-packages.txt"
+      - "scripts/collect-build-artifacts.sh"
+      - "scripts/edgeai-release-source.sh"
+      - ".github/workflows/package-build.yml"
   workflow_dispatch:
     inputs:
       packages:
@@ -137,6 +146,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends \
+            build-essential \
             ca-certificates \
             devscripts \
             dpkg-dev \
@@ -145,8 +155,10 @@ jobs:
             gzip \
             make \
             tar \
+            unzip \
             wget \
-            xz-utils
+            xz-utils \
+            zstd
 
       - name: Check out packaging repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -1,0 +1,25 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	install -d debian/edgeai-tiovx-kernels/usr/lib
+	cp -a payload/usr/lib/libedgeai-tiovx-kernels.so.0* \
+		debian/edgeai-tiovx-kernels/usr/lib/
+	cp -a payload/opt debian/edgeai-tiovx-kernels/
+	install -d debian/edgeai-tiovx-kernels-dev/usr/lib
+	cp -a payload/usr/lib/libedgeai-tiovx-kernels.so \
+		debian/edgeai-tiovx-kernels-dev/usr/lib/
+	cp -a payload/usr/include debian/edgeai-tiovx-kernels-dev/usr/
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_shlibdeps:

@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	install -d debian/ti-tidl/usr/lib
+	cp -a payload/usr/lib/*.so.* payload/usr/lib/*.so debian/ti-tidl/usr/lib/
+	cp -a payload/opt debian/ti-tidl/
+	install -d debian/ti-tidl-dev/usr/include
+	cp -a payload/usr/include/. debian/ti-tidl-dev/usr/include/
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_shlibdeps:

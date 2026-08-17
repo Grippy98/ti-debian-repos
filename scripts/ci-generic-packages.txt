@@ -9,3 +9,23 @@ cryptodev-linux
 pru-pssp
 ti-img-rogue-driver
 ti-linux-firmware
+# The modern 6.12 image/modules are suite-neutral. CI uses the unsuffixed
+# Trixie metadata but builds in Jammy so generated header tools retain the
+# oldest supported glibc ABI. Bookworm's older 6.1 version remains separate.
+ti-linux-kernel
+ti-linux-kernel-rt
+# Media-only EdgeAI payload; no binaries or suite dependencies.
+edgeai-test-data
+# Compiler-generated accelerator data with no Debian userspace ABI.
+edgeai-tidl-models
+# Device firmware contains no Linux userspace objects.
+ti-adas-firmware
+# PSDK 11.02 native payloads are ABI-compatible across Noble, Trixie, and
+# Resolute. Their CPython and distribution-multimedia consumers stay separate.
+ti-tidl-osrt
+ti-vision-apps
+ti-tidl
+edgeai-apps-utils
+edgeai-tiovx-kernels
+edgeai-tiovx-modules
+edgeai-gst-plugins

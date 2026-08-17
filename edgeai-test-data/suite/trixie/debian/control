@@ -1,0 +1,18 @@
+Source: edgeai-test-data
+Section: misc
+Priority: optional
+Maintainer: Vijay Pothukuchi <vijayp@ti.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://github.com/TexasInstruments/edgeai-gst-apps
+Rules-Requires-Root: no
+
+Package: edgeai-test-data
+Architecture: all
+Depends: ${misc:Depends}
+Description: TI EdgeAI test images and J722S demonstration videos
+ Sample images and videos for TI EdgeAI inference pipelines and applications.
+ The payload includes classification, detection, and segmentation test data,
+ plus J722S out-of-box demonstration media.
+ .
+ Files are installed below /opt/edgeai-test-data and /opt/oob-demo-assets.

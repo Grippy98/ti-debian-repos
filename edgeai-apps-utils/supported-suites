@@ -1,0 +1,4 @@
+# Imported host binaries require glibc 2.38 and GLIBCXX 3.4.32.
+trixie
+noble
+resolute

@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	cp -a payload/. debian/ti-edgeai-firmware-j722s-4gb/
+
+override_dh_strip:
+
+override_dh_shlibdeps:

@@ -1,0 +1,24 @@
+Source: edgeai-tiovx-modules
+Section: libs
+Priority: optional
+Maintainer: Andrei Aldea <andrei@ti.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://git.ti.com/cgit/edgeai/edgeai-tiovx-modules
+Rules-Requires-Root: no
+
+Package: edgeai-tiovx-modules
+Architecture: arm64
+Depends: ${misc:Depends},
+ libc6,
+ libtivision-apps11.2.0 (>= 11.02.03-3~),
+ edgeai-tiovx-kernels (>= 1.0.0-1~)
+Description: TI EdgeAI OpenVX modules library
+ C APIs wrapping OpenVX nodes into reusable modules for TI EdgeAI pipelines.
+
+Package: edgeai-tiovx-modules-dev
+Section: libdevel
+Architecture: arm64
+Depends: ${misc:Depends}, edgeai-tiovx-modules (= ${binary:Version})
+Description: TI EdgeAI OpenVX modules - development files
+ Headers and the unversioned linker name for TI EdgeAI OpenVX modules.

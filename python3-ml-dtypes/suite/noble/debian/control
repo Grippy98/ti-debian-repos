@@ -1,0 +1,23 @@
+Source: python3-ml-dtypes
+Section: python
+Priority: optional
+Maintainer: Andrei Aldea <andrei@ti.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ python3-all-dev,
+ python3-numpy,
+ python3-pybind11,
+ python3-setuptools
+Standards-Version: 4.6.2
+Homepage: https://github.com/jax-ml/ml_dtypes
+Rules-Requires-Root: no
+
+Package: python3-ml-dtypes
+Architecture: any
+Depends: ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends}, python3-numpy
+Description: NumPy extension dtypes used by TI machine-learning runtimes
+ ml_dtypes provides NumPy implementations of several machine-learning data
+ types, including bfloat16, float8, and low-bit integer formats.
+ .
+ This package is compiled for the native Python and NumPy ABI of each suite.

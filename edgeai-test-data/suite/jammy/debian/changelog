@@ -1,0 +1,6 @@
+edgeai-test-data (11.01.00-1~jammy1) jammy; urgency=medium
+
+  * Import the checksum-pinned TI EdgeAI test images and J722S demo assets.
+  * Record a complete payload checksum manifest for reproducibility.
+
+ -- Vijay Pothukuchi <vijayp@ti.com>  Mon, 17 Aug 2026 11:20:35 -0500

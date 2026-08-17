@@ -1,0 +1,36 @@
+Source: ti-edgeai
+Section: metapackages
+Priority: optional
+Maintainer: Andrei Aldea <andrei@ti.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/TexasInstruments/edgeai-docs
+Rules-Requires-Root: no
+
+Package: ti-edgeai
+Architecture: all
+Depends: ${misc:Depends},
+ libti-rpmsg-char0 (>= 0.6.10-1~),
+ ti-tidl-osrt (>= 11.02.16.00-1~),
+ python3-ti-tidl-osrt (>= 11.02.16.00-1~),
+ libtivision-apps11.2.0 (>= 11.02.03-3~),
+ ti-vision-apps-data (>= 11.02.03-3~),
+ ti-tidl (>= 1.0.0-1~),
+ ti-edgeai-firmware-j722s-4gb (>= 1.0.0+psdk11.2.1.beagley4gb2-1~),
+ edgeai-apps-utils (>= 1.0.0-1~),
+ edgeai-tiovx-kernels (>= 1.0.0-1~),
+ edgeai-tiovx-modules (>= 1.0.0-1~),
+ edgeai-dl-inferer (>= 1.0.0-1~),
+ edgeai-gst-plugins (>= 1.0.0-4~),
+ edgeai-gst-apps (>= 1.0.0-1~),
+ edgeai-tiovx-apps (>= 1.0.0-1~),
+ edgeai-test-data (>= 11.01.00-1~),
+ edgeai-tidl-models (>= 11.02.16.00-2~),
+ gstreamer1.0-plugins-good (>= 1.24.2-1ubuntu1.5+ti1~),
+ libgstreamer-plugins-good1.0-0 (>= 1.24.2-1ubuntu1.5+ti1~),
+ gstreamer1.0-tools
+Recommends: ti-img-rogue-driver-am62p-dkms,
+ ti-img-rogue-umlibs-am62p
+Description: TI EdgeAI software stack for J722S 4 GiB systems
+ Installs the PSDK Analytics 11.02 runtime, firmware, models, OpenVX and
+ GStreamer components for AM67A/J722S systems using the 4 GiB memory profile.

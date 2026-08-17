@@ -58,10 +58,9 @@ The repository contains packaging for these Debian and Ubuntu suites:
 | Ubuntu | `noble` | Ubuntu 24.04 LTS |
 | Ubuntu | `resolute` | Ubuntu 26.04 LTS |
 
-Suite availability is package-specific. Check for
-`<package-name>/suite/<suite>/debian/` before building; all packages have
-`trixie`, `jammy`, `noble`, and `resolute` packaging, while some older packages
-do not have a `bookworm` directory.
+Not every package supports every suite. Check for
+`<package-name>/suite/<suite>/debian/` before building. If a package has a
+`supported-suites` file, CI only builds the suites listed there.
 
 This command carries out all necessary steps to build the package. The
 package and all related files are then stored in
@@ -76,6 +75,10 @@ For example: to build `ti-linux-kernel`, the command is:
 
 The output is then found in `build/trixie/ti-linux-kernel/`.
 
+Set `BUILD_ROOT` to use a separate output tree, for example when checking a
+clean rebuild without disturbing an existing build cache. `SOURCE_CACHE_DIR`
+can point that build at a shared download cache.
+
 Packaging metadata can be checked before building with:
 
 ```sh
@@ -84,28 +87,21 @@ Packaging metadata can be checked before building with:
 
 ## Automated package builds
 
-GitHub Actions builds changed packages for Debian Bookworm and Trixie and for
-Ubuntu Jammy, Noble, and Resolute on native ARM64 runners. A package change
-builds every one of those suites that the package provides, so a suite-specific
-packaging change cannot silently break another supported variant. Packages
-without a Bookworm suite begin with Trixie.
+GitHub Actions builds changed packages on ARM64 for Debian Bookworm and Trixie
+and Ubuntu Jammy, Noble, and Resolute. Each changed package is built for every
+suite it supports.
 
-Suite-neutral `Architecture: all` or fixed-`arm64` sources are built once per
-distinct base version from their unsuffixed Debian packaging, and the resulting
-package is targeted at every compatible requested suite. Ubuntu changelogs
-retain their normal `~jammy1`, `~noble1`, and `~resolute1` source-version
-suffixes. The audited generic sources are `cc33xx-fw`,
-`cc33xx-target-scripts`, `cryptodev-linux`, `pru-pssp`,
-`ti-img-rogue-driver`, and `ti-linux-firmware`; `cryptodev-linux`,
-`ti-img-rogue-driver`, and `ti-linux-firmware` retain separate Bookworm builds
-when Bookworm carries an older version. Their classification is recorded in
-`scripts/ci-generic-packages.txt` and enforced by the packaging validator. A
-complete build therefore uses 56 jobs instead of 75 without reducing suite
-coverage.
+Suite-neutral packages listed in `scripts/ci-generic-packages.txt` are built
+once per base version and reused for compatible suites. Packages that use an
+older version on Bookworm still get a separate Bookworm build. The modern
+kernel packages use Trixie metadata in a Jammy build container so the tools in
+the header packages remain compatible with the oldest supported glibc. The
+packaging validator checks this setup, so full builds do not rebuild every
+suite-neutral payload for every suite.
 
 - Pull requests build and retain package artifacts for 14 days.
-- Pushes to `master` that change a package create a draft debug prerelease in
-  this repository after every selected build passes.
+- Pushes to `master` that change a package create a draft debug prerelease once
+  every selected build passes.
 - The `Build downstream Debian packages` workflow can also be run manually for
   a comma-separated package list (or `all`) and suite list.
 
@@ -113,8 +109,45 @@ Each release asset is a package/target-suite bundle containing the generated
 `.deb`, `.ddeb`, `.udeb`, `.changes`, and `.buildinfo` files, plus a manifest
 and SHA-256 checksums. Generic bundles can target multiple suites.
 
-> [!IMPORTANT]
-> Publishing into `TexasInstruments/ti-debpkgs` is intentionally not automated.
-> A future publisher should be a separate, manually triggered workflow using a
-> protected environment for the APT signing key and destination-repository
-> credentials. Pull-request builds must never have access to those secrets.
+### EdgeAI packages
+
+| Source | Supported suites | Notes |
+| --- | --- | --- |
+| `ti-rpmsg-char` | All | Built separately for each suite |
+| `python3-ml-dtypes` | All | Built separately for each suite |
+| `edgeai-test-data` | All | Shared test data |
+| `edgeai-tidl-models` | All | AM67A/J722S model payload |
+| `ti-adas-firmware` | All | Builds `ti-edgeai-firmware-j722s-4gb` for the BeagleY-AI/J722S 4 GiB memory profile |
+| `gst-plugins-good1.0-ti` | Noble | Noble 1.24 still needs the V4L2 Bayer caps fix; newer suites already contain it |
+| `ti-tidl-osrt` | Noble, Trixie, Resolute | Native ONNX Runtime and TVM libraries, plus development files |
+| `python3-ti-tidl-osrt` | Noble | TI publishes this release's Python modules only for CPython 3.12 |
+| `ti-vision-apps` | Noble, Trixie, Resolute | TI OpenVX middleware, headers, and sensor data |
+| `ti-tidl` | Noble, Trixie, Resolute | TIDL delegate libraries and headers |
+| `edgeai-apps-utils` | Noble, Trixie, Resolute | EdgeAI utility library and headers |
+| `edgeai-tiovx-kernels` | Noble, Trixie, Resolute | EdgeAI OpenVX kernels and headers |
+| `edgeai-tiovx-modules` | Noble, Trixie, Resolute | EdgeAI OpenVX modules and headers |
+| `edgeai-gst-plugins` | Noble, Trixie, Resolute | TI OpenVX and TIDL GStreamer plugins |
+| `edgeai-dl-inferer` | Noble | Uses TI's CPython 3.12 OSRT modules |
+| `edgeai-tiovx-apps` | Noble | Current build links Noble's FFmpeg 6 ABI |
+| `edgeai-gst-apps` | Noble | Current build links Noble's OpenCV 4.6 ABI and Python 3.12 OSRT |
+| `ti-edgeai` | Noble | Installs the complete matching EdgeAI stack |
+
+The imported PSDK host binaries need glibc 2.38 and GLIBCXX 3.4.32, so they
+cannot run on Bookworm or Jammy. Supporting those suites requires rebuilding
+TI Vision Apps, TIDL, ONNX Runtime, TVM, and their dependants against the older
+userspace. Trixie and Resolute can use the native runtime, but TI does not
+publish compatible Python bindings for their Python versions.
+
+### Deferred `linux-libc-dev` review
+
+The standard and RT kernel builds currently emit TI's `linux-libc-dev`
+alongside the versioned image and header packages. Compared with upstream
+Linux 6.12.17, the TI UAPI differs in four headers: RGB-IR Bayer media formats,
+IR and background-detection V4L2 controls, and a remoteproc DMA-BUF attach
+ioctl. None of the packages in this repository currently requires those
+downstream headers; normal builds use each distribution's `linux-libc-dev`.
+
+The TI package version also sorts newer than the distribution version, which
+could block normal header updates. The `linux-libc-dev` branch is kept for a
+separate review. For now, avoid installing TI's `linux-libc-dev` on a general
+Debian or Ubuntu system unless the downstream UAPI is needed.

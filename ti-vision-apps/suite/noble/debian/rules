@@ -1,0 +1,28 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	install -d debian/libtivision-apps11.2.0/usr/lib
+	cp -a payload/usr/lib/libtivision_apps.so.11.2.0 \
+		debian/libtivision-apps11.2.0/usr/lib/
+	install -d debian/libtivision-apps-dev/usr/lib
+	cp -a payload/usr/lib/libtivision_apps.so \
+		payload/usr/lib/libti_2a_wrapper.a \
+		debian/libtivision-apps-dev/usr/lib/
+	cp -a payload/usr/include debian/libtivision-apps-dev/usr/
+	install -d debian/ti-vision-apps-data/opt
+	cp -a payload/opt/imaging payload/opt/vision_apps \
+		debian/ti-vision-apps-data/opt/
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_shlibdeps:

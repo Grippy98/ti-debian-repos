@@ -1,0 +1,4 @@
+# GStreamer 1.26 and newer already use the canonical Bayer caps. This fork is
+# based on Ubuntu's 1.24 packaging and is neither needed nor ABI-compatible
+# with the other supported suite versions.
+noble

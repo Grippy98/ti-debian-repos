@@ -1,0 +1,97 @@
+From 8e884e4e31649a9fc19095d6501a1143b074aba8 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Sebastian=20Dr=C3=B6ge?= <sebastian@centricular.com>
+Date: Fri, 27 Sep 2024 09:47:50 +0300
+Subject: [PATCH] qtdemux: Fix error handling when parsing cenc sample groups
+ fails
+
+Thanks to Antonio Morales for finding and reporting the issue.
+
+Fixes GHSL-2024-238, GHSL-2024-239, GHSL-2024-240
+Fixes https://gitlab.freedesktop.org/gstreamer/gstreamer/-/issues/3846
+
+Part-of: <https://gitlab.freedesktop.org/gstreamer/gstreamer/-/merge_requests/8060>
+---
+ .../gst-plugins-good/gst/isomp4/qtdemux.c     | 25 ++++++++++++++-----
+ 1 file changed, 19 insertions(+), 6 deletions(-)
+
+--- a/gst/isomp4/qtdemux.c
++++ b/gst/isomp4/qtdemux.c
+@@ -3834,7 +3834,7 @@ qtdemux_get_cenc_sample_properties (GstQ
+ static gboolean
+ qtdemux_parse_sbgp (GstQTDemux * qtdemux, QtDemuxStream * stream,
+     GstByteReader * br, guint32 group, GPtrArray ** sample_to_group_array,
+-    GstStructure * default_properties, GPtrArray * tack_properties_array,
++    GstStructure * default_properties, GPtrArray * track_properties_array,
+     GPtrArray * group_properties_array)
+ {
+   guint32 flags = 0;
+@@ -3893,15 +3893,15 @@ qtdemux_parse_sbgp (GstQTDemux * qtdemux
+     if (index > 0x10000) {
+       /* Index is referring the current fragment. */
+       index -= 0x10001;
+-      if (index < group_properties_array->len)
++      if (group_properties_array && index < group_properties_array->len)
+         properties = g_ptr_array_index (group_properties_array, index);
+       else
+         GST_ERROR_OBJECT (qtdemux, "invalid group index %u", index);
+     } else if (index > 0) {
+       /* Index is referring to the whole track. */
+       index--;
+-      if (index < tack_properties_array->len)
+-        properties = g_ptr_array_index (tack_properties_array, index);
++      if (track_properties_array && index < track_properties_array->len)
++        properties = g_ptr_array_index (track_properties_array, index);
+       else
+         GST_ERROR_OBJECT (qtdemux, "invalid group index %u", index);
+     } else {
+@@ -4452,6 +4452,11 @@ qtdemux_parse_moof (GstQTDemux * qtdemux
+       GNode *sgpd_node;
+       GstByteReader sgpd_data;
+ 
++      if (!info) {
++        GST_ERROR_OBJECT (qtdemux, "Have no valid protection scheme info");
++        goto fail;
++      }
++
+       if (info->fragment_group_properties) {
+         g_ptr_array_free (info->fragment_group_properties, TRUE);
+         info->fragment_group_properties = NULL;
+@@ -11953,12 +11958,15 @@ qtdemux_parse_trak (GstQTDemux * qtdemux
+       if (stream->subtype != FOURCC_soun) {
+         GST_ERROR_OBJECT (qtdemux,
+             "Unexpeced stsd type 'aavd' outside 'soun' track");
++        goto corrupt_file;
+       } else {
+         /* encrypted audio with sound sample description v0 */
+         GNode *enc = qtdemux_tree_get_child_by_type (stsd, fourcc);
+         stream->protected = TRUE;
+-        if (!qtdemux_parse_protection_aavd (qtdemux, stream, enc, &fourcc))
++        if (!qtdemux_parse_protection_aavd (qtdemux, stream, enc, &fourcc)) {
+           GST_ERROR_OBJECT (qtdemux, "Failed to parse protection scheme info");
++          goto corrupt_file;
++        }
+       }
+     }
+ 
+@@ -11967,8 +11975,10 @@ qtdemux_parse_trak (GstQTDemux * qtdemux
+        * with the same type */
+       GNode *enc = qtdemux_tree_get_child_by_type (stsd, fourcc);
+       stream->protected = TRUE;
+-      if (!qtdemux_parse_protection_scheme_info (qtdemux, stream, enc, &fourcc))
++      if (!qtdemux_parse_protection_scheme_info (qtdemux, stream, enc, &fourcc)) {
+         GST_ERROR_OBJECT (qtdemux, "Failed to parse protection scheme info");
++        goto corrupt_file;
++      }
+     }
+ 
+     if (stream->subtype == FOURCC_vide) {
+@@ -14066,6 +14076,9 @@ qtdemux_parse_trak (GstQTDemux * qtdemux
+     GNode *sgpd_node;
+     GstByteReader sgpd_data;
+ 
++    if (!info)
++      goto corrupt_file;
++
+     if (info->track_group_properties) {
+       g_ptr_array_free (info->fragment_group_properties, TRUE);
+       info->fragment_group_properties = NULL;

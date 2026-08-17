@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+
+info=/usr/share/ti-edgeai/model-zoo-build-info.txt
+onnx=/opt/model_zoo/ONR-CL-6360-regNetx-200mf
+tflite=/opt/model_zoo/TFL-CL-0000-mobileNetV1-ti-example
+
+grep -qx 'artifact_compiler_version=11_02_16_00' "$info"
+grep -qx 'target_device=AM67A' "$info"
+grep -qx 'packaged_model_count=2' "$info"
+grep -q '"graph_nodes_offloaded": 103' \
+    "$onnx/artifacts/tidl-compiler-info.json"
+grep -q '"graph_nodes_offloaded": 34' \
+    "$tflite/artifacts/tidl-tflite-compiler-info.json"
+test -s "$onnx/artifacts/subgraph_0_tidl_net.bin"
+test -s "$onnx/artifacts/subgraph_0_tidl_io_1.bin"
+test -s "$tflite/artifacts/86_tidl_net.bin"
+test -s "$tflite/artifacts/86_tidl_io_1.bin"

@@ -1,0 +1,37 @@
+Source: python3-ti-tidl-osrt
+Section: python
+Priority: optional
+Maintainer: Andrei Aldea <andrei@ti.com>
+Build-Depends: debhelper-compat (= 13), unzip
+Standards-Version: 4.7.2
+Homepage: https://software-dl.ti.com/jacinto7/esd/tidl-tools/
+Rules-Requires-Root: no
+
+Package: python3-ti-tidl-osrt
+Architecture: arm64
+Depends: ${misc:Depends},
+ ${shlibs:Depends},
+ ti-tidl-osrt (>= 11.02.16.00-1~),
+ python3 (>= 3.12),
+ python3 (<< 3.13),
+ python3-numpy,
+ python3-coloredlogs,
+ python3-flatbuffers,
+ python3-cloudpickle,
+ python3-decorator,
+ python3-attr,
+ python3-graphviz,
+ python3-ml-dtypes (>= 0.2.0),
+ python3-packaging,
+ python3-protobuf,
+ python3-psutil,
+ python3-scipy,
+ python3-sympy,
+ python3-tornado,
+ python3-typing-extensions
+Description: TI Open Source DL/ML runtime modules for Python 3.12
+ CPython 3.12 modules for TensorFlow Lite 2.12, ONNX Runtime 1.23 with the
+ TIDL execution provider, Apache TVM 0.18, and TIDL Runtime 0.1.
+ .
+ These modules use TI's PSDK 11.02 CPython 3.12 ABI and are intended for
+ Ubuntu Noble on J721E, J721S2, J784S4, J722S, and AM62A-family devices.

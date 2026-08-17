@@ -13,7 +13,8 @@ destination=$3
 target_suites=$4
 expected_architecture=$5
 topdir=$(git rev-parse --show-toplevel)
-builddir="$topdir/build/$suite/$package"
+buildroot="${BUILD_ROOT:-$topdir/build}"
+builddir="$buildroot/$suite/$package"
 changelog="$topdir/$package/suite/$suite/debian/changelog"
 
 if [ ! -d "$builddir" ]; then

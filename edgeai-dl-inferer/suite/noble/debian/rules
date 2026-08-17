@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	install -D -m 0644 \
+		payload/usr/lib/python3.12/site-packages/edgeai_dl_inferer.py \
+		debian/edgeai-dl-inferer/usr/lib/python3/dist-packages/edgeai_dl_inferer.py
+	install -d debian/edgeai-dl-inferer-dev/usr/lib
+	cp -a payload/usr/lib/*.a debian/edgeai-dl-inferer-dev/usr/lib/
+	cp -a payload/usr/include debian/edgeai-dl-inferer-dev/usr/
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_shlibdeps:

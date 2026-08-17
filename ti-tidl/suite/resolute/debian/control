@@ -1,0 +1,27 @@
+Source: ti-tidl
+Section: libs
+Priority: optional
+Maintainer: Andrei Aldea <andrei@ti.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://git.ti.com/git/processor-sdk-vision/arm-tidl.git
+Rules-Requires-Root: no
+
+Package: ti-tidl
+Architecture: arm64
+Depends: ${misc:Depends},
+ libc6,
+ libgcc-s1,
+ libstdc++6,
+ libtivision-apps11.2.0 (>= 11.02.03-3~),
+ libti-rpmsg-char0 (>= 0.6.10-1~)
+Description: TI TIDL delegate libraries
+ TIDL OpenVX, TensorFlow Lite, ONNX Runtime, and TIDL Runtime execution
+ provider libraries for TI EdgeAI devices.
+
+Package: ti-tidl-dev
+Section: libdevel
+Architecture: arm64
+Depends: ${misc:Depends}, ti-tidl (= ${binary:Version})
+Description: TI TIDL delegate libraries - development files
+ Public headers and unversioned linker names for the TI TIDL delegates.

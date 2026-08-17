@@ -1,0 +1,6 @@
+# The native libraries require glibc 2.38 and GLIBCXX 3.4.32, which are
+# available in Noble and newer suites. CPython bindings are packaged
+# separately because TI publishes them only for CPython 3.12.
+noble
+trixie
+resolute

@@ -1,0 +1,29 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	install -d debian/ti-tidl-osrt/usr/lib
+	cp -a staging/lib/libonnxruntime.so* debian/ti-tidl-osrt/usr/lib/
+	cp -a staging/python/tvm/libtvm.so \
+		staging/python/tvm/libtvm_runtime.so debian/ti-tidl-osrt/usr/lib/
+	install -d debian/ti-tidl-osrt-dev/usr/include
+	install -d debian/ti-tidl-osrt-dev/usr/lib
+	cp -a staging/include/. debian/ti-tidl-osrt-dev/usr/include/
+	cp -a staging/lib/*.a debian/ti-tidl-osrt-dev/usr/lib/
+	cp -a staging/lib/tflite_2.12 debian/ti-tidl-osrt-dev/usr/lib/
+	if [ -d staging/python/tvm ]; then \
+		install -d debian/ti-tidl-osrt-dev/usr/include/tvm/tvm; \
+		cd staging/python/tvm && find . -name '*.h*' -exec cp --parents \
+			-t $(CURDIR)/debian/ti-tidl-osrt-dev/usr/include/tvm/tvm/ {} +; \
+	fi
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym

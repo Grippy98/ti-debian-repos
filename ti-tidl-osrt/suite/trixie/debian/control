@@ -1,0 +1,28 @@
+Source: ti-tidl-osrt
+Section: libs
+Priority: optional
+Maintainer: Vijay Pothukuchi <vijayp@ti.com>
+Build-Depends: debhelper-compat (= 13), unzip
+Standards-Version: 4.7.2
+Homepage: https://software-dl.ti.com/jacinto7/esd/tidl-tools/
+Rules-Requires-Root: no
+
+Package: ti-tidl-osrt
+Architecture: arm64
+Depends: ${misc:Depends},
+ ${shlibs:Depends}
+Suggests: python3-ti-tidl-osrt
+Description: TI Open Source DL/ML native runtime libraries
+ Native ONNX Runtime 1.23 and Apache TVM 0.18 shared libraries for TI EdgeAI
+ C and C++ applications.
+ .
+ TI's CPython bindings are shipped separately. This package supports J721E,
+ J721S2, J784S4, J722S, and AM62A-family devices.
+
+Package: ti-tidl-osrt-dev
+Section: libdevel
+Architecture: arm64
+Depends: ${misc:Depends}, ti-tidl-osrt (= ${binary:Version})
+Description: TI Open Source DL/ML runtime - development files
+ C++ headers and static libraries for TensorFlow Lite 2.12, ONNX Runtime 1.23,
+ Apache TVM 0.18, and TIDL Runtime 0.1.

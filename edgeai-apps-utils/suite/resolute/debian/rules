@@ -1,0 +1,25 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	install -d debian/edgeai-apps-utils/usr/lib
+	cp -a payload/usr/lib/libedgeai-apps-utils.so.0* \
+		debian/edgeai-apps-utils/usr/lib/
+	cp -a payload/opt debian/edgeai-apps-utils/
+	install -d debian/edgeai-apps-utils-dev/usr/lib
+	cp -a payload/usr/lib/libedgeai-apps-utils.so \
+		debian/edgeai-apps-utils-dev/usr/lib/
+	cp -a payload/usr/include debian/edgeai-apps-utils-dev/usr/
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_shlibdeps:

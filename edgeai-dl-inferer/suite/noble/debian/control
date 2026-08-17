@@ -1,0 +1,31 @@
+Source: edgeai-dl-inferer
+Section: libs
+Priority: optional
+Maintainer: Andrei Aldea <andrei@ti.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://git.ti.com/cgit/edgeai/edgeai-dl-inferer
+Rules-Requires-Root: no
+
+Package: edgeai-dl-inferer
+Architecture: arm64
+Depends: ${misc:Depends},
+ python3 (>= 3.12),
+ python3 (<< 3.13),
+ python3-numpy,
+ python3-yaml,
+ python3-ti-tidl-osrt (>= 11.02.16.00-1~),
+ ti-tidl (>= 1.0.0-1~)
+Description: TI EdgeAI deep-learning inferer
+ Python abstraction for TI's TensorFlow Lite, ONNX Runtime, and TVM inference
+ backends.
+
+Package: edgeai-dl-inferer-dev
+Section: libdevel
+Architecture: arm64
+Depends: ${misc:Depends},
+ edgeai-dl-inferer (= ${binary:Version}),
+ edgeai-apps-utils-dev (>= 1.0.0-1~),
+ ti-tidl-osrt-dev (>= 11.02.16.00-1~)
+Description: TI EdgeAI deep-learning inferer - development files
+ Static C++ libraries and headers for the TI EdgeAI inferer.

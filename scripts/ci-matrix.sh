@@ -33,6 +33,22 @@ suite_image() {
     esac
 }
 
+generic_build_image() {
+    local package=$1
+    local canonical_suite=$2
+
+    case "$package:$canonical_suite" in
+        ti-linux-kernel:trixie|ti-linux-kernel-rt:trixie)
+            # Kernel images and modules do not depend on userspace, but their
+            # headers contain host tools such as fixdep and modpost. Build the
+            # shared modern package on the oldest supported glibc while using
+            # the unsuffixed Trixie metadata for the published version.
+            printf 'ubuntu:22.04\n'
+            ;;
+        *) suite_image "$canonical_suite" ;;
+    esac
+}
+
 changelog_version() {
     sed -n '1{s/^[^(]*(\([^)]*\)).*/\1/p;q;}' "$1"
 }
@@ -42,7 +58,15 @@ suite_neutral_version() {
 }
 
 package_architecture() {
-    awk '$1 == "Architecture:" {print $2}' "$1" | sort -u | paste -sd, -
+    local declared
+    declared=$(awk '$1 == "Architecture:" {print $2}' "$1" | sort -u)
+    if [ "$declared" = all ]; then
+        printf 'all\n'
+    elif grep -qx all <<<"$declared"; then
+        printf 'all,arm64\n'
+    else
+        printf 'arm64\n'
+    fi
 }
 
 is_generic_package() {
@@ -70,6 +94,16 @@ else
         case "$path" in
             run.sh|scripts/validate-packaging.sh|scripts/ci-matrix.sh|scripts/ci-generic-packages.txt|scripts/collect-build-artifacts.sh|.github/workflows/package-build.yml)
                 rebuild_all=1
+                ;;
+            scripts/edgeai-release-source.sh)
+                for version_file in "$topdir"/*/version.sh; do
+                    if grep -Fq 'scripts/edgeai-release-source.sh' "$version_file"; then
+                        basename "${version_file%/version.sh}"
+                    fi
+                done >>"$package_list"
+                ;;
+            ti-tidl-osrt/version.sh)
+                printf '%s\n' python3-ti-tidl-osrt >>"$package_list"
                 ;;
         esac
 
@@ -141,7 +175,7 @@ while IFS= read -r package; do
                     '$2 == version_group {print $3; exit}' "$package_rows")
             fi
             version=$(changelog_version "$topdir/$package/suite/$canonical_suite/debian/changelog")
-            image=$(suite_image "$canonical_suite")
+            image=$(generic_build_image "$package" "$canonical_suite")
             architecture=$(package_architecture "$topdir/$package/suite/$canonical_suite/debian/control")
             artifact_targets=${targets//,/-}
             artifact_architecture=${architecture//,/-}
@@ -153,9 +187,11 @@ while IFS= read -r package; do
     else
         while IFS=$'\t' read -r version version_group suite image; do
             [ -n "$suite" ] || continue
-            artifact="deb-$package-$suite-arm64"
+            architecture=$(package_architecture "$topdir/$package/suite/$suite/debian/control")
+            artifact_architecture=${architecture//,/-}
+            artifact="deb-$package-$suite-$artifact_architecture"
             printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-                "$package" "$suite" "$image" "$suite" arm64 "$artifact" "$version" \
+                "$package" "$suite" "$image" "$suite" "$architecture" "$artifact" "$version" \
                 >>"$matrix_rows"
         done <"$package_rows"
     fi
