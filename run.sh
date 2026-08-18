@@ -52,6 +52,7 @@ package_name=$(cd "${debcontroldir}" && dpkg-parsechangelog --show-field Source)
 deb_version=$(cd "${debcontroldir}" && dpkg-parsechangelog --show-field Version)
 package_version=$(echo $deb_version | sed 's/\(.*\)-.*/\1/')
 last_tested_commit=$(echo $package_version | sed 's/.*+//')
+source_revision=${git_revision:-$last_tested_commit}
 package_full="${package_name}-${package_version}"
 package_full_ll="${package_name}_${package_version}"
 orig_tar="${builddir}/${package_full_ll}.orig.tar.gz"
@@ -72,11 +73,11 @@ if [ ! -f "$orig_tar" ]; then
         git -C "${source_repo}" init
         git -C "${source_repo}" remote add origin "${git_repo}"
     fi
-    checkout_revision="${last_tested_commit}"
-    if ! git -C "${source_repo}" cat-file -e "${last_tested_commit}^{commit}" 2>/dev/null; then
+    checkout_revision="${source_revision}"
+    if ! git -C "${source_repo}" cat-file -e "${source_revision}^{commit}" 2>/dev/null; then
         # Fetch only the revision used by the package. Some servers reject a
         # direct fetch of an abbreviated commit, so retain a full-fetch fallback.
-        if retry_git_fetch "${source_repo}" --depth 1 origin "${last_tested_commit}"; then
+        if retry_git_fetch "${source_repo}" --depth 1 origin "${source_revision}"; then
             checkout_revision=FETCH_HEAD
         else
             retry_git_fetch "${source_repo}" origin
