@@ -21,11 +21,11 @@ The `run.sh` file is the "main" script that should be run. It takes as argument
 the name of the package to be built.
 
 Each TI package has a corresponding directory, named after its source package.
-Files shared by every supported suite are stored in
-`<package-name>/common/debian/`. Suite directories under
-`<package-name>/suite/<distro-variant>/debian/` contain the changelog and any
-files that differ for that suite. `run.sh` combines the common files with the
-selected suite's overrides before building the source package.
+Default packaging files are stored in `<package-name>/common/debian/`. Suite
+directories under `<package-name>/suite/<distro-variant>/debian/` contain the
+changelog and any files that differ from the default for that suite. `run.sh`
+combines the common files with the selected suite's overrides before building
+the source package.
 
 There also exists a `<package-name>/version.sh` file. This file is sourced by
 `run.sh`. It exports a bunch of variables for `run.sh` to use. It also contains
