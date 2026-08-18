@@ -4,6 +4,8 @@ set -euo pipefail
 
 topdir=$(git rev-parse --show-toplevel)
 generic_packages="$topdir/scripts/ci-generic-packages.txt"
+metadata_root=$(mktemp -d)
+trap 'rm -rf "$metadata_root"' EXIT
 
 if [ "$#" -eq 0 ]; then
     set -- bookworm trixie jammy noble resolute
@@ -31,6 +33,39 @@ suite_neutral_version() {
     sed -E 's/~(jammy|noble|resolute)[0-9]+$//' <<<"$1"
 }
 
+assembled_debian_dir() {
+    local package_root=$1
+    local suite=$2
+    local package=${package_root##*/}
+    local destination="$metadata_root/$package/$suite/debian"
+
+    if [ ! -d "$destination" ]; then
+        "$topdir/scripts/assemble-debian.sh" \
+            "$package_root" "$suite" "$destination"
+    fi
+    printf '%s\n' "$destination"
+}
+
+for version_file in "$topdir"/*/version.sh; do
+    package_root=${version_file%/version.sh}
+    common_dir="$package_root/common/debian"
+    [ -d "$common_dir" ] || continue
+
+    for suite_dir in "$package_root"/suite/*/debian; do
+        [ -d "$suite_dir" ] || continue
+        while IFS= read -r suite_file; do
+            relative_path=${suite_file#"$suite_dir"/}
+            common_file="$common_dir/$relative_path"
+            if [ -f "$common_file" ] && cmp -s "$common_file" "$suite_file"; then
+                if { [ -x "$common_file" ] && [ -x "$suite_file" ]; } ||
+                   { [ ! -x "$common_file" ] && [ ! -x "$suite_file" ]; }; then
+                    report_failure "${package_root##*/}/${suite_dir#"$package_root"/} duplicates common/debian/$relative_path"
+                fi
+            fi
+        done < <(find "$suite_dir" -type f -print)
+    done
+done
+
 for suite in "$@"; do
     case "$suite" in
         jammy) expected_suffix='~jammy' ;;
@@ -39,31 +74,26 @@ for suite in "$@"; do
         *) expected_suffix='' ;;
     esac
 
-    controls=()
-    while IFS= read -r control; do
-        controls+=("$control")
-    done < <(find "$topdir" -path "*/suite/$suite/debian/control" -print | sort)
-
-    if [ "${#controls[@]}" -eq 0 ]; then
-        report_failure "no package metadata found for suite $suite"
-        continue
-    fi
-
     if [ -n "$expected_suffix" ]; then
         for version_file in "$topdir"/*/version.sh; do
             package_root=${version_file%/version.sh}
-            if [ ! -f "$package_root/suite/$suite/debian/control" ]; then
+            if [ ! -d "$package_root/suite/$suite/debian" ]; then
                 report_failure "${package_root##*/} is missing suite $suite"
             fi
         done
     fi
 
-    for control in "${controls[@]}"; do
-        debian_dir=${control%/control}
-        package_root=${control%/suite/"$suite"/debian/control}
+    package_count=0
+    for version_file in "$topdir"/*/version.sh; do
+        package_root=${version_file%/version.sh}
+        [ -d "$package_root/suite/$suite/debian" ] || continue
+
         package=${package_root##*/}
+        debian_dir=$(assembled_debian_dir "$package_root" "$suite")
+        control="$debian_dir/control"
         changelog="$debian_dir/changelog"
         rules="$debian_dir/rules"
+        package_count=$((package_count + 1))
 
         if ! changelog_error=$(dpkg-parsechangelog --all -l"$changelog" 2>&1 >/dev/null); then
             report_failure "$package/$suite changelog could not be parsed: $changelog_error"
@@ -90,12 +120,12 @@ for suite in "$@"; do
             fi
 
             if [ "$generic" -eq 0 ]; then
-                # Compiled Ubuntu variants need distinct suite-qualified
-                # versions. Debian suite trees preserve upstream changelog
-                # targets and may intentionally reuse versions.
-                for other_changelog in "$package_root"/suite/*/debian/changelog; do
-                    [ "$other_changelog" = "$changelog" ] && continue
-                    other_version=$(dpkg-parsechangelog -l"$other_changelog" --show-field Version)
+                for other_suite_dir in "$package_root"/suite/*/debian; do
+                    [ "$other_suite_dir" = "$package_root/suite/$suite/debian" ] && continue
+                    other_suite=$(basename "$(dirname "$other_suite_dir")")
+                    other_debian_dir=$(assembled_debian_dir "$package_root" "$other_suite")
+                    other_version=$(dpkg-parsechangelog \
+                        -l"$other_debian_dir/changelog" --show-field Version)
                     if [ "$version" = "$other_version" ]; then
                         report_failure "$package reuses version $version in multiple suites"
                     fi
@@ -110,15 +140,15 @@ for suite in "$@"; do
                 *) report_failure "$package/$suite is marked generic but has unsafe architectures: $architectures" ;;
             esac
 
-            # A shared binary is safe only when every suite carrying the same
-            # base version has byte-identical packaging apart from its changelog.
             version_group=$(suite_neutral_version "$version")
-            for other_changelog in "$package_root"/suite/*/debian/changelog; do
-                [ "$other_changelog" = "$changelog" ] && continue
-                other_version=$(dpkg-parsechangelog -l"$other_changelog" --show-field Version)
+            for other_suite_dir in "$package_root"/suite/*/debian; do
+                [ "$other_suite_dir" = "$package_root/suite/$suite/debian" ] && continue
+                other_suite=$(basename "$(dirname "$other_suite_dir")")
+                other_debian_dir=$(assembled_debian_dir "$package_root" "$other_suite")
+                other_version=$(dpkg-parsechangelog \
+                    -l"$other_debian_dir/changelog" --show-field Version)
                 other_version_group=$(suite_neutral_version "$other_version")
                 [ "$version_group" = "$other_version_group" ] || continue
-                other_debian_dir=${other_changelog%/changelog}
                 if ! diff -qr --exclude=changelog "$debian_dir" "$other_debian_dir" >/dev/null; then
                     report_failure "$package base version $version_group has suite-specific packaging"
                 fi
@@ -135,29 +165,38 @@ for suite in "$@"; do
             report_failure "$package/$suite debian/rules is not executable"
         fi
 
-        reference_control="$package_root/suite/trixie/debian/control"
-        if [ ! -f "$reference_control" ]; then
-            reference_control="$package_root/suite/bookworm/debian/control"
+        if [ -d "$package_root/suite/trixie/debian" ]; then
+            reference_debian_dir=$(assembled_debian_dir "$package_root" trixie)
+        elif [ -d "$package_root/suite/bookworm/debian" ]; then
+            reference_debian_dir=$(assembled_debian_dir "$package_root" bookworm)
+        else
+            reference_suite_dir=$(find "$package_root/suite" -mindepth 2 -maxdepth 2 \
+                -type d -name debian -print | sort | head -1)
+            reference_suite=$(basename "$(dirname "$reference_suite_dir")")
+            reference_debian_dir=$(assembled_debian_dir "$package_root" "$reference_suite")
         fi
-        reference_maintainer=$(sed -n 's/^Maintainer: //p' "$reference_control" | head -1)
+        reference_maintainer=$(sed -n 's/^Maintainer: //p' \
+            "$reference_debian_dir/control" | head -1)
         suite_maintainer=$(sed -n 's/^Maintainer: //p' "$control" | head -1)
         if [ "$suite_maintainer" != "$reference_maintainer" ]; then
             report_failure "$package/$suite changes Maintainer from '$reference_maintainer' to '$suite_maintainer'"
         fi
+
+        if [ "$package" = mesa ] && [ -f "$debian_dir/control.in" ]; then
+            mesa_tempdir=$(mktemp -d)
+            cp -a "$debian_dir" "$mesa_tempdir/debian"
+            (cd "$mesa_tempdir" && make -s -f debian/rules regen_control)
+            if ! cmp -s "$debian_dir/control" "$mesa_tempdir/debian/control"; then
+                report_failure "mesa/$suite debian/control is not regenerated from control.in"
+            fi
+            rm -rf "$mesa_tempdir"
+        fi
     done
 
-    mesa_dir="$topdir/mesa/suite/$suite"
-    if [ -f "$mesa_dir/debian/control.in" ]; then
-        tempdir=$(mktemp -d)
-        cp -a "$mesa_dir/debian" "$tempdir/debian"
-        (cd "$tempdir" && make -s -f debian/rules regen_control)
-        if ! cmp -s "$mesa_dir/debian/control" "$tempdir/debian/control"; then
-            report_failure "mesa/$suite debian/control is not regenerated from control.in"
-        fi
-        rm -rf "$tempdir"
+    if [ "$package_count" -eq 0 ]; then
+        report_failure "no package metadata found for suite $suite"
     fi
-
-    echo "Validated ${#controls[@]} packages for $suite"
+    echo "Validated $package_count packages for $suite"
 done
 
 if [ "$failures" -ne 0 ]; then

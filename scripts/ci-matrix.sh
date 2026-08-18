@@ -13,8 +13,9 @@ suite_list=$(mktemp)
 matrix_rows=$(mktemp)
 package_rows=$(mktemp)
 changed_files=$(mktemp)
+metadata_root=$(mktemp -d)
 generic_packages="$topdir/scripts/ci-generic-packages.txt"
-trap 'rm -f "$package_list" "$suite_list" "$matrix_rows" "$package_rows" "$changed_files"' EXIT
+trap 'rm -f "$package_list" "$suite_list" "$matrix_rows" "$package_rows" "$changed_files"; rm -rf "$metadata_root"' EXIT
 
 list_all_packages() {
     for version_file in "$topdir"/*/version.sh; do
@@ -45,6 +46,18 @@ package_architecture() {
     awk '$1 == "Architecture:" {print $2}' "$1" | sort -u | paste -sd, -
 }
 
+assembled_debian_dir() {
+    local package=$1
+    local suite=$2
+    local destination="$metadata_root/$package/$suite/debian"
+
+    if [ ! -d "$destination" ]; then
+        "$topdir/scripts/assemble-debian.sh" \
+            "$topdir/$package" "$suite" "$destination"
+    fi
+    printf '%s\n' "$destination"
+}
+
 is_generic_package() {
     grep -Ev '^[[:space:]]*(#|$)' "$generic_packages" | grep -Fqx "$1"
 }
@@ -68,7 +81,7 @@ else
     rebuild_all=0
     while IFS= read -r path; do
         case "$path" in
-            run.sh|scripts/validate-packaging.sh|scripts/ci-matrix.sh|scripts/ci-generic-packages.txt|scripts/collect-build-artifacts.sh|.github/workflows/package-build.yml)
+            run.sh|scripts/assemble-debian.sh|scripts/validate-packaging.sh|scripts/ci-matrix.sh|scripts/ci-generic-packages.txt|scripts/collect-build-artifacts.sh|.github/workflows/package-build.yml)
                 rebuild_all=1
                 ;;
         esac
@@ -111,7 +124,8 @@ while IFS= read -r package; do
     while IFS= read -r suite; do
         [ -n "$suite" ] || continue
         if [ -d "$topdir/$package/suite/$suite/debian" ]; then
-            version=$(changelog_version "$topdir/$package/suite/$suite/debian/changelog")
+            debian_dir=$(assembled_debian_dir "$package" "$suite")
+            version=$(changelog_version "$debian_dir/changelog")
             version_group=$version
             if [ "$generic" -eq 1 ]; then
                 version_group=$(suite_neutral_version "$version")
@@ -129,8 +143,13 @@ while IFS= read -r package; do
                 '$2 == version_group {print $3}' "$package_rows" | paste -sd, -)
             canonical_suite=
             for candidate in trixie bookworm; do
-                candidate_changelog="$topdir/$package/suite/$candidate/debian/changelog"
-                if [ -f "$candidate_changelog" ] &&
+                if [ -d "$topdir/$package/suite/$candidate/debian" ]; then
+                    candidate_debian_dir=$(assembled_debian_dir "$package" "$candidate")
+                    candidate_changelog="$candidate_debian_dir/changelog"
+                else
+                    candidate_changelog=
+                fi
+                if [ -n "$candidate_changelog" ] &&
                    [ "$(suite_neutral_version "$(changelog_version "$candidate_changelog")")" = "$version_group" ]; then
                     canonical_suite=$candidate
                     break
@@ -140,9 +159,10 @@ while IFS= read -r package; do
                 canonical_suite=$(awk -F '\t' -v version_group="$version_group" \
                     '$2 == version_group {print $3; exit}' "$package_rows")
             fi
-            version=$(changelog_version "$topdir/$package/suite/$canonical_suite/debian/changelog")
+            canonical_debian_dir=$(assembled_debian_dir "$package" "$canonical_suite")
+            version=$(changelog_version "$canonical_debian_dir/changelog")
             image=$(suite_image "$canonical_suite")
-            architecture=$(package_architecture "$topdir/$package/suite/$canonical_suite/debian/control")
+            architecture=$(package_architecture "$canonical_debian_dir/control")
             artifact_targets=${targets//,/-}
             artifact_architecture=${architecture//,/-}
             artifact="deb-$package-$artifact_targets-$artifact_architecture"

@@ -3,9 +3,11 @@ name: Build downstream Debian packages
 on:
   pull_request:
     paths:
+      - "*/common/**"
       - "*/suite/**"
       - "*/version.sh"
       - "run.sh"
+      - "scripts/assemble-debian.sh"
       - "scripts/validate-packaging.sh"
       - "scripts/ci-matrix.sh"
       - "scripts/ci-generic-packages.txt"
@@ -15,9 +17,16 @@ on:
     branches:
       - master
     paths:
+      - "*/common/**"
       - "*/suite/**"
       - "*/version.sh"
       - "run.sh"
+      - "scripts/assemble-debian.sh"
+      - "scripts/validate-packaging.sh"
+      - "scripts/ci-matrix.sh"
+      - "scripts/ci-generic-packages.txt"
+      - "scripts/collect-build-artifacts.sh"
+      - ".github/workflows/package-build.yml"
   workflow_dispatch:
     inputs:
       packages:

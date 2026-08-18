@@ -31,20 +31,25 @@ topdir=$(git rev-parse --show-toplevel)
 projdir="${topdir}/$1"
 sourcedir="${topdir}/build/sources"
 builddir="${topdir}/build/${DEB_SUITE}/$1"
-debcontroldir="${projdir}/suite/${DEB_SUITE}"
 
-if [ ! -d ${projdir} ]; then
+if [ ! -d "${projdir}" ]; then
     echo "This project does not exist."
     echo "Exiting."
     exit 1
 fi
 
-source ${projdir}/version.sh
+source "${projdir}/version.sh"
 
-mkdir -p ${builddir}
+mkdir -p "${builddir}"
 
-package_name=$(cd ${debcontroldir} && dpkg-parsechangelog --show-field Source)
-deb_version=$(cd ${debcontroldir} && dpkg-parsechangelog --show-field Version)
+packaging_root=$(mktemp -d "${TMPDIR:-/tmp}/ti-debian-metadata.XXXXXX")
+trap 'rm -rf "$packaging_root"' EXIT
+"${topdir}/scripts/assemble-debian.sh" \
+    "$projdir" "$DEB_SUITE" "$packaging_root/debian"
+debcontroldir=$packaging_root
+
+package_name=$(cd "${debcontroldir}" && dpkg-parsechangelog --show-field Source)
+deb_version=$(cd "${debcontroldir}" && dpkg-parsechangelog --show-field Version)
 package_version=$(echo $deb_version | sed 's/\(.*\)-.*/\1/')
 last_tested_commit=$(echo $package_version | sed 's/.*+//')
 package_full="${package_name}-${package_version}"
