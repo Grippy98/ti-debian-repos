@@ -13,8 +13,10 @@ destination=$3
 target_suites=$4
 expected_architecture=$5
 topdir=$(git rev-parse --show-toplevel)
-builddir="$topdir/build/$suite/$package"
 changelog="$topdir/$package/suite/$suite/debian/changelog"
+source_name=$(dpkg-parsechangelog -l"$changelog" --show-field Source)
+version=$(dpkg-parsechangelog -l"$changelog" --show-field Version)
+builddir="$topdir/build/$suite/$package/$version"
 
 if [ ! -d "$builddir" ]; then
     echo "Build output directory does not exist: $builddir" >&2
@@ -47,8 +49,6 @@ if [ "$deb_count" -eq 0 ]; then
     exit 1
 fi
 
-source_name=$(dpkg-parsechangelog -l"$changelog" --show-field Source)
-version=$(dpkg-parsechangelog -l"$changelog" --show-field Version)
 binary_architectures=()
 for artifact in "$destination"/*.deb "$destination"/*.ddeb "$destination"/*.udeb; do
     binary_architectures+=("$(dpkg-deb --field "$artifact" Architecture)")

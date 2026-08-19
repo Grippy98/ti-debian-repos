@@ -67,7 +67,7 @@ do not have a `bookworm` directory.
 
 This command carries out all necessary steps to build the package. The
 package and all related files are then stored in
-`build/<suite>/<package-name>`.
+`build/<suite>/<package-name>/<debian-version>`.
 Note that certain packages may require root privileges.
 
 For example: to build `ti-linux-kernel`, the command is:
@@ -76,7 +76,8 @@ For example: to build `ti-linux-kernel`, the command is:
 ./run.sh ti-linux-kernel
 ```
 
-The output is then found in `build/trixie/ti-linux-kernel/`.
+The output is then found in
+`build/trixie/ti-linux-kernel/11.00.09-1/`.
 
 Packaging metadata can be checked before building with:
 
@@ -115,8 +116,6 @@ Each release asset is a package/target-suite bundle containing the generated
 `.deb`, `.ddeb`, `.udeb`, `.changes`, and `.buildinfo` files, plus a manifest
 and SHA-256 checksums. Generic bundles can target multiple suites.
 
-> [!IMPORTANT]
-> Publishing into `TexasInstruments/ti-debpkgs` is intentionally not automated.
-> A future publisher should be a separate, manually triggered workflow using a
-> protected environment for the APT signing key and destination-repository
-> credentials. Pull-request builds must never have access to those secrets.
+Publishing to `TexasInstruments/ti-debpkgs` is not implemented yet. A future
+publisher should be a separate, manually triggered workflow, with the APT
+signing key and repository credentials kept in a protected environment.

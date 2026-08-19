@@ -30,7 +30,8 @@ DEB_SUITE="${DEB_SUITE:-trixie}"
 topdir=$(git rev-parse --show-toplevel)
 projdir="${topdir}/$1"
 sourcedir="${topdir}/build/sources"
-builddir="${topdir}/build/${DEB_SUITE}/$1"
+debcontroldir="${projdir}/suite/${DEB_SUITE}"
+debcommoncontroldir="${projdir}/common"
 
 if [ ! -d "${projdir}" ]; then
     echo "This project does not exist."
@@ -40,13 +41,10 @@ fi
 
 source "${projdir}/version.sh"
 
-mkdir -p "${builddir}"
-
-packaging_root=$(mktemp -d "${TMPDIR:-/tmp}/ti-debian-metadata.XXXXXX")
-trap 'rm -rf "$packaging_root"' EXIT
-"${topdir}/scripts/assemble-debian.sh" \
-    "$projdir" "$DEB_SUITE" "$packaging_root/debian"
-debcontroldir=$packaging_root
+if [ ! -d "${debcontroldir}/debian" ]; then
+    echo "$1 does not provide packaging for suite ${DEB_SUITE}"
+    exit 1
+fi
 
 package_name=$(cd "${debcontroldir}" && dpkg-parsechangelog --show-field Source)
 deb_version=$(cd "${debcontroldir}" && dpkg-parsechangelog --show-field Version)
@@ -55,8 +53,11 @@ last_tested_commit=$(echo $package_version | sed 's/.*+//')
 source_revision=${git_revision:-$last_tested_commit}
 package_full="${package_name}-${package_version}"
 package_full_ll="${package_name}_${package_version}"
+builddir="${topdir}/build/${DEB_SUITE}/$1/${deb_version}"
 orig_tar="${builddir}/${package_full_ll}.orig.tar.gz"
 echo "Building " $package_name " version " $deb_version
+
+mkdir -p "${builddir}"
 
 # Discard an interrupted source archive rather than treating it as a valid
 # cache entry on the next build.
@@ -98,8 +99,14 @@ if [ ! -f "${builddir}/${package_name}_${deb_version}.dsc" ]; then
     # Extract original source tarball
     tar -xzmf "${builddir}/${package_full_ll}.orig.tar.gz" -C "${builddir}"
 
-    # Deploy our Debian control files
-    cp -rv "${debcontroldir}/debian" "${builddir}/${package_full}/"
+    # Deploy the default Debian control files, then apply suite overrides.
+    mkdir -p "${builddir}/${package_full}/debian"
+    if [ -d "${debcommoncontroldir}/debian" ]; then
+        cp -av "${debcommoncontroldir}/debian/." \
+            "${builddir}/${package_full}/debian/"
+    fi
+    cp -av "${debcontroldir}/debian/." \
+        "${builddir}/${package_full}/debian/"
 
     # Build source package
     (cd "${builddir}/${package_full}" && dpkg-source -b .)
@@ -120,9 +127,9 @@ if [ ! -f "${builddir}/${package_name}_${deb_version}_${build_arch}.buildinfo" ]
         dpkg-source -x "${builddir}/${package_name}_${deb_version}.dsc" "${builddir}/${package_name}_${deb_version}"
     fi
 
-    # Install build dependencies. Run mk-build-deps outside the unpacked source
-    # tree so older releases do not leave generated build-dependency artifacts
-    # that dpkg-source mistakes for upstream changes.
+    # Install build dependencies outside the unpacked source tree. Generated
+    # helper artifacts stay in this release's build directory and cannot be
+    # mistaken for upstream source changes or pollute another package version.
     (cd "${builddir}" && mk-build-deps -ir -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends" \
       "${package_name}_${deb_version}/debian/control")
 
