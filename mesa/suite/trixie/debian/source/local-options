@@ -23,3 +23,6 @@ extend-diff-ignore = src/gallium/drivers/pl111/Makefile.sources
 
 # CI
 extend-diff-ignore = .gitlab-ci|.gitlab-ci.yml
+
+# Ignore version
+extend-diff-ignore = VERSION
