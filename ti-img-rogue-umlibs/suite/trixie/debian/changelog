@@ -1,3 +1,11 @@
+ti-img-rogue-umlibs (26.1.6967606+git20260515+a59e0e6b92df-2) trixie; urgency=medium
+
+  * Update *mesa-pvr* naming scheme in ti-img-rogue-umlibs depends list following mesa v25.2.8.
+    Add all 8 *mesa-pvr* pkgs in ti-img-rogue-umlibs depends list.
+    Add ti-img-rogue-tools to ti-img-rogue-umlibs recommends list.
+
+ -- Jonas Wood <jw@ti.com>  Tue, 25 Aug 2026 23:32:20 +0000
+
 ti-img-rogue-umlibs (26.1.6967606+git20260515+a59e0e6b92df-1) trixie; urgency=low
 
   * New upstream release.
