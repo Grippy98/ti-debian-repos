@@ -1,3 +1,12 @@
+mesa (25.2.8+git20260619+0cb5bad52580-2) unstable; urgency=medium
+
+  * libgbm1-pvr pkg has complete provides/replaces/conflicts list
+    with pvr pkgs removed in v25.2.8+git20260619+0cb5bad52580-1.
+  * Add to list the provides/replaces/conflicts list from those
+    removed pvr pkgs.
+
+ -- Jonas Wood <jw@ti.com>  Wed, 26 Aug 2026 19:11:24 +0000
+
 mesa (25.2.8+git20260619+0cb5bad52580-1) unstable; urgency=medium
 
   * New upstream release.

@@ -77,7 +77,21 @@ Depends:
  ${shlibs:Depends},
  ${misc:Depends},
  mesa-libgallium-pvr (= ${binary:Version}),
-Provides: libgbm1 (= ${binary:Version})
+Provides: libgbm1 (= ${binary:Version}), libxatracker2-pvr,
+ libegl1-mesa-pvr-dev, libgles2-mesa-pvr-dev,
+ libglapi-mesa-pvr, libglx-mesa-pvr0,
+ libgl1-mesa-pvr-dev, libosmesa-pvr6,
+ libosmesa-pvr6-dev, mesa-pvr-va-drivers,
+ mesa-pvr-vdpau-drivers, mesa-pvr-opencl-icd,
+ mesa-pvr-drm-shim, libxatracker-dev-pvr,
+ libd3dadapter9-mesa-pvr, libd3dadapter9-mesa-pvr-dev,
+ libxatracker2 (= ${binary:Version}), libxatracker-dev (= ${binary:Version}),
+ libd3dadapter9-mesa (= ${binary:Version}), libd3dadapter9-mesa-dev (= ${binary:Version}),
+ libegl1-mesa-dev (= ${binary:Version}), libgles2-mesa-dev (= ${binary:Version}),
+ libglapi-mesa (= ${binary:Version}), libglx-vendor, libglx-mesa0 (= ${binary:Version}),
+ libgl1-mesa-dev (= ${binary:Version}), libosmesa6 (= ${binary:Version}), libosmesa6-dev (= ${binary:Version}),
+ libosmesa-dev, mesa-drm-shim (= ${binary:Version}), va-driver, mesa-va-drivers (= ${binary:Version}),
+ vdpau-driver,  mesa-vdpau-drivers (= ${binary:Version}), opencl-icd, mesa-opencl-icd (= ${binary:Version})
 Replaces: libgbm1, libxatracker2-pvr,
  libegl1-mesa-pvr-dev, libgles2-mesa-pvr-dev,
  libglapi-mesa-pvr, libglx-mesa-pvr0,
@@ -85,7 +99,14 @@ Replaces: libgbm1, libxatracker2-pvr,
  libosmesa-pvr6-dev, mesa-pvr-va-drivers,
  mesa-pvr-vdpau-drivers, mesa-pvr-opencl-icd,
  mesa-pvr-drm-shim, libxatracker-dev-pvr,
- libd3dadapter9-mesa-pvr, libd3dadapter9-mesa-pvr-dev
+ libd3dadapter9-mesa-pvr, libd3dadapter9-mesa-pvr-dev,
+ libxatracker2, libxatracker-dev,
+ libd3dadapter9-mesa, libd3dadapter9-mesa-dev,
+ libegl1-mesa-dev, libgles2-mesa-dev,
+ libglapi-mesa, libglx-mesa0,
+ libgl1-mesa-dev, libosmesa6, libosmesa6-dev, libosmesa-dev,
+ mesa-va-drivers, mesa-vdpau-drivers, mesa-opencl-icd, mesa-drm-shim,
+ vdpau-va-driver (<< 0.7.4-5)
 Conflicts: libgbm1, libxatracker2-pvr,
  libegl1-mesa-pvr-dev, libgles2-mesa-pvr-dev,
  libglapi-mesa-pvr, libglx-mesa-pvr0,
@@ -93,7 +114,13 @@ Conflicts: libgbm1, libxatracker2-pvr,
  libosmesa-pvr6-dev, mesa-pvr-va-drivers,
  mesa-pvr-vdpau-drivers, mesa-pvr-opencl-icd,
  mesa-pvr-drm-shim, libxatracker-dev-pvr,
- libd3dadapter9-mesa-pvr, libd3dadapter9-mesa-pvr-dev
+ libd3dadapter9-mesa-pvr, libd3dadapter9-mesa-pvr-dev,
+ libxatracker2, libxatracker-dev,
+ libd3dadapter9-mesa, libd3dadapter9-mesa-dev,
+ libegl1-mesa-dev, libgles2-mesa-dev,
+ libglapi-mesa, libglx-mesa0,
+ libgl1-mesa-dev, libosmesa6, libosmesa6-dev, libosmesa-dev,
+ mesa-va-drivers, mesa-vdpau-drivers, mesa-opencl-icd, mesa-drm-shim
 Pre-Depends: ${misc:Pre-Depends}
 Multi-Arch: same
 Description: generic buffer management API -- runtime
@@ -129,7 +156,7 @@ Depends:
  ${misc:Depends},
  libgbm1-pvr (= ${binary:Version}) [!hurd-any],
  mesa-libgallium-pvr (= ${binary:Version}),
-Provides: libegl-vendor, libegl-mesa0, libegl1, libegl-mesa-pvr0
+Provides: libegl-vendor, libegl-mesa0 (= ${binary:Version}), libegl1, libegl-mesa-pvr0
 Replaces: libegl-mesa0, libegl1, libegl-mesa-pvr0
 Conflicts: libegl-mesa0, libegl1, libegl-mesa-pvr0
 Pre-Depends: ${misc:Pre-Depends}
@@ -150,7 +177,7 @@ Depends:
  libvulkan1 [amd64 arm64 armel armhf i386 loong64 mips64el powerpc ppc64 ppc64el riscv64 s390x sparc64 x32],
  ${shlibs:Depends},
  ${misc:Depends}
-Provides: libgl1-mesa-dri, libgl1-mesa-pvr-dri
+Provides: libgl1-mesa-dri (= ${binary:Version}), libgl1-mesa-pvr-dri
 Conflicts: libgl1-mesa-dri, libgl1-mesa-pvr-dri
 Replaces: libgl1-mesa-dri, libgl1-mesa-pvr-dri
 Multi-Arch: same
@@ -209,7 +236,7 @@ Depends:
  ${shlibs:Depends},
  ${misc:Depends},
 Pre-Depends: ${misc:Pre-Depends}
-Provides: libglapi-mesa
+Provides: libglapi-mesa (= ${binary:Version})
 Multi-Arch: same
 Description: shared infrastructure for Mesa drivers
  This package contains libgallium, a private library shared between
