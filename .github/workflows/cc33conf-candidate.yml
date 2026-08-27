@@ -1,0 +1,198 @@
+name: Build attested cc33conf candidate
+
+on:
+  push:
+    branches:
+      - codex/cc33conf-candidate
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cc33conf-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build cc33conf / trixie / arm64
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    permissions:
+      artifact-metadata: write
+      contents: read
+    outputs:
+      candidate_name: ${{ steps.candidate.outputs.name }}
+      candidate_sha256: ${{ steps.candidate.outputs.sha256 }}
+    container:
+      image: debian@sha256:34cd9e9fd437c0a095ec39cb2e73422c9f30821b0d0848ed74fd0d43bae4d958
+    steps:
+      - name: Install packaging tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            debhelper \
+            devscripts \
+            dpkg-dev \
+            equivs \
+            git \
+            gzip \
+            python3 \
+            tar
+
+      - name: Check out packaging repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate trusted invocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "Grippy98/ti-debian-repos"
+          test "$GITHUB_WORKFLOW_REF" = \
+            "Grippy98/ti-debian-repos/.github/workflows/cc33conf-candidate.yml@$GITHUB_REF"
+          test "$GITHUB_REF" = "refs/heads/codex/cc33conf-candidate"
+          case "$GITHUB_EVENT_NAME" in
+            push|workflow_dispatch) ;;
+            *) exit 1 ;;
+          esac
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          test "$GITHUB_SHA" = "$(git rev-parse HEAD)"
+          test "$(dpkg --print-architecture)" = "arm64"
+
+      - name: Build cc33conf
+        env:
+          DEB_SUITE: trixie
+        run: ./run.sh cc33conf
+
+      - name: Create publication candidate
+        id: candidate
+        shell: bash
+        env:
+          CANDIDATE_WORKFLOW: .github/workflows/cc33conf-candidate.yml
+        run: |
+          set -euo pipefail
+          bundle=$(
+            ./scripts/collect-build-artifacts.sh \
+              cc33conf trixie trixie main arm64 build/candidates
+          )
+          test -f "$bundle"
+          {
+            echo "path=$bundle"
+            echo "name=${bundle##*/}"
+            echo "sha256=$(sha256sum "$bundle" | cut -d' ' -f1)"
+          } >>"$GITHUB_OUTPUT"
+
+      - name: Transfer candidate to isolated attestation job
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cc33conf-candidate-transfer-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.candidate.outputs.path }}
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+  attest:
+    name: Attest and publish candidate
+    needs: build
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      artifact-metadata: write
+      attestations: write
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out clean packaging repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate trusted invocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "Grippy98/ti-debian-repos"
+          test "$GITHUB_WORKFLOW_REF" = \
+            "Grippy98/ti-debian-repos/.github/workflows/cc33conf-candidate.yml@$GITHUB_REF"
+          test "$GITHUB_REF" = "refs/heads/codex/cc33conf-candidate"
+          case "$GITHUB_EVENT_NAME" in
+            push|workflow_dispatch) ;;
+            *) exit 1 ;;
+          esac
+          test "$GITHUB_SHA" = "$(git rev-parse HEAD)"
+          test "$(dpkg --print-architecture)" = "arm64"
+
+      - name: Download transferred candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: cc33conf-candidate-transfer-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/candidate
+
+      - name: Inspect transferred candidate
+        id: candidate
+        shell: bash
+        env:
+          CANDIDATE_WORKFLOW: .github/workflows/cc33conf-candidate.yml
+          EXPECTED_NAME: ${{ needs.build.outputs.candidate_name }}
+          EXPECTED_SHA256: ${{ needs.build.outputs.candidate_sha256 }}
+        run: |
+          set -euo pipefail
+          mapfile -d '' files < <(
+            find "$RUNNER_TEMP/candidate" -maxdepth 1 -type f -print0
+          )
+          test "${#files[@]}" -eq 1
+          ./scripts/inspect-build-candidate.py "${files[0]}" "$GITHUB_OUTPUT"
+          test "${files[0]##*/}" = "$EXPECTED_NAME"
+          test "$(sha256sum "${files[0]}" | cut -d' ' -f1)" = "$EXPECTED_SHA256"
+
+      - name: Attest candidate build provenance
+        id: attestation
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ steps.candidate.outputs.path }}
+
+      - name: Upload attested candidate
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cc33conf-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.candidate.outputs.path }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Summarize candidate request fields
+        env:
+          ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          ATTESTATION_URL: ${{ steps.attestation.outputs.attestation-url }}
+          BUNDLE_NAME: ${{ steps.candidate.outputs.name }}
+          BUNDLE_SHA256: ${{ steps.candidate.outputs.sha256 }}
+          SOURCE_NAME: ${{ steps.candidate.outputs.source_name }}
+          SOURCE_VERSION: ${{ steps.candidate.outputs.source_version }}
+          UPSTREAM_COMMIT: ${{ steps.candidate.outputs.upstream_commit }}
+          UPSTREAM_REPOSITORY: ${{ steps.candidate.outputs.upstream_repository }}
+        run: |
+          {
+            echo "### Attested publication candidate"
+            echo
+            echo "- Source: \`$SOURCE_NAME\` \`$SOURCE_VERSION\`"
+            echo "- Upstream: \`$UPSTREAM_REPOSITORY\` at \`$UPSTREAM_COMMIT\`"
+            echo "- Producer: \`$GITHUB_REPOSITORY\` at \`$GITHUB_SHA\`"
+            echo "- Run: \`$GITHUB_RUN_ID\`, attempt \`$GITHUB_RUN_ATTEMPT\`"
+            echo "- Artifact name: \`cc33conf-candidate-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT\`"
+            echo "- Artifact ID: \`$ARTIFACT_ID\`"
+            echo "- Artifact digest: \`sha256:$ARTIFACT_DIGEST\`"
+            echo "- Bundle: \`$BUNDLE_NAME\`"
+            echo "- Bundle SHA-256: \`$BUNDLE_SHA256\`"
+            echo "- [Artifact]($ARTIFACT_URL)"
+            echo "- [Provenance attestation]($ATTESTATION_URL)"
+          } >>"$GITHUB_STEP_SUMMARY"

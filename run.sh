@@ -72,7 +72,9 @@ fi
 # Generate binary package for this arch if not found
 build_arch=$(dpkg --print-architecture)
 if [ ! -f "${builddir}/${package_name}_${deb_version}_${build_arch}.buildinfo" ]; then
-    run_prep || true
+    if declare -F run_prep >/dev/null; then
+        run_prep
+    fi
 
     # Extract source package
     if [ ! -d "${builddir}/${package_name}_${deb_version}" ]; then
@@ -84,12 +86,17 @@ if [ ! -f "${builddir}/${package_name}_${deb_version}_${build_arch}.buildinfo" ]
 
     # Build debian package.
     # HACK: There is an issue with building source package for Linux Kernel. So only build binary packages for Linux.
+    build_status=0
     if [[ "${package_name}" == "ti-linux-kernel"* ]]; then
-        (cd "${builddir}/${package_name}_${deb_version}" && debuild --no-lintian --no-sign -b || true)
+        (cd "${builddir}/${package_name}_${deb_version}" && debuild --no-lintian --no-sign -b) || build_status=$?
     else
-        (cd "${builddir}/${package_name}_${deb_version}" && debuild --no-lintian --no-sign -sa || true)
+        (cd "${builddir}/${package_name}_${deb_version}" && debuild --no-lintian --no-sign -sa) || build_status=$?
     fi
 
     # Cleanup intermediate build directory
     rm -r "${builddir}/${package_name}_${deb_version}"
+
+    if [ "$build_status" -ne 0 ]; then
+        exit "$build_status"
+    fi
 fi
