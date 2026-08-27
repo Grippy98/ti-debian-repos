@@ -1,3 +1,9 @@
+mesa (25.2.8+git20260619+0cb5bad52580-3) unstable; urgency=medium
+
+  * Fix circular dependency.
+
+ -- Jonas Wood <jw@ti.com>  Thu, 27 Aug 2026 17:45:41 +0000
+
 mesa (25.2.8+git20260619+0cb5bad52580-2) unstable; urgency=medium
 
   * libgbm1-pvr pkg has complete provides/replaces/conflicts list

@@ -236,7 +236,6 @@ Depends:
  ${shlibs:Depends},
  ${misc:Depends},
 Pre-Depends: ${misc:Pre-Depends}
-Provides: libglapi-mesa (= ${binary:Version})
 Multi-Arch: same
 Description: shared infrastructure for Mesa drivers
  This package contains libgallium, a private library shared between
